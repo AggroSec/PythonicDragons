@@ -45,16 +45,21 @@ class Character:
 
 class Player(Character):
 
-    def __init__(self, level, hit_die, con, strength, dex, intel, wis, ris, ac, name, base_attack):
+    def __init__(self, level, hit_die, con, strength, dex, intel, wis, ris, ac, name, base_attack, spell_slots={}):
         base_hp = hit_die + self.get_modifier(con)
         self.current_hp_per_level = (hit_die // 2) + 1 + self.get_modifier(con)
         self.hit_die = hit_die
         self.name = name
+        self.spell_slots = spell_slots
         if level > 1:
             total_health = base_hp + (self.current_hp_per_level * (level - 1))
         else:
             total_health = base_hp
         super().__init__(level, total_health, con, strength, dex, intel, wis, ris, ac, base_attack)
+        self.add_ability(self.add_weapon_attack(base_attack))
+        self.buffs = []
+        self.debuffs = []
+        self.rest_usage = []
     
     def update_level_health(self):
         base_hp = self.hit_die + self.get_modifier(self.con)
@@ -67,8 +72,30 @@ class Player(Character):
         else:
             self.ac = new_ac + self.get_modifier(self.dex)
 
+    def add_weapon_attack(self, attack_str):
+        '''
+        Cobbling this on, weapon attacks will be added as an ability during combat, this will add it to the abilities list giving the information needed.
+        self.base_attack will still be set, however it won't be used on the player. It will be used with enemies.
+        '''
+        return {
+            "name": "Basic Attack",
+            "description": "A standard melee or ranged attack with your weapon",
+            "uses_per_rest": 0,
+            "modifier_stat": "physical",
+            "effects": [
+                {
+                "type": "damage",
+                "value": attack_str,
+                "target": "enemy"
+                }
+            ]
+            }
+
+
 class EnemyNPC(Character):
     def __init__(self, level, max_hp, con, strength, dex, intel, wis, ris, ac, name, base_attack, ability_use_chance):
         super().__init__(level, max_hp, con, strength, dex, intel, wis, ris, ac, base_attack)
         self.ability_use_chance = ability_use_chance
         self.name = name
+        self.buffs = []
+        self.debuffs = []

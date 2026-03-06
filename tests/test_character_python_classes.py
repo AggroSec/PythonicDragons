@@ -73,4 +73,9 @@ class TestCharacters(unittest.TestCase):
         print(ability_ending)
         self.assertTrue(ability_attack_string)
 
+    def test_player_basic_attack_ability(self):
+        player = Player(2, 12, 12, 10, 14, 10, 10, 18, 10, "AggroSec", "2d6")
+        print(player.abilities)
+        self.assertTrue("Basic Attack" == player.abilities[0]["name"])
+
 
