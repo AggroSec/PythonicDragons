@@ -45,7 +45,7 @@ class Character:
 
 class Player(Character):
 
-    def __init__(self, level, hit_die, con, strength, dex, intel, wis, ris, ac, name, base_attack, spell_slots={}):
+    def __init__(self, level, hit_die, con, strength, dex, intel, wis, ris, ac, name, base_attack, spell_slots={}, weapon="dagger", weapon_verb=["stab"]):
         base_hp = hit_die + self.get_modifier(con)
         self.current_hp_per_level = (hit_die // 2) + 1 + self.get_modifier(con)
         self.hit_die = hit_die
@@ -56,10 +56,11 @@ class Player(Character):
         else:
             total_health = base_hp
         super().__init__(level, total_health, con, strength, dex, intel, wis, ris, ac, base_attack)
-        self.add_ability(self.add_weapon_attack(base_attack))
+        self.add_ability(self.add_weapon_attack(base_attack, weapon))
         self.buffs = []
         self.debuffs = []
-        self.rest_usage = []
+        self.rest_usage = {}
+        self.weapon_verb = weapon_verb
     
     def update_level_health(self):
         base_hp = self.hit_die + self.get_modifier(self.con)
@@ -72,7 +73,7 @@ class Player(Character):
         else:
             self.ac = new_ac + self.get_modifier(self.dex)
 
-    def add_weapon_attack(self, attack_str):
+    def add_weapon_attack(self, attack_str, weapon):
         '''
         Cobbling this on, weapon attacks will be added as an ability during combat, this will add it to the abilities list giving the information needed.
         self.base_attack will still be set, however it won't be used on the player. It will be used with enemies.
@@ -82,6 +83,14 @@ class Player(Character):
             "description": "A standard melee or ranged attack with your weapon",
             "uses_per_rest": 0,
             "modifier_stat": "physical",
+            "attack_descs": [
+                "You %v at %t, drawing blood from them.",
+                "You %v towards %t, scoring a hit."
+            ],
+             "attack_misses": [
+                "You swing your weapon at %t, but it glances off of them, doing no damage.",
+                "You move to hit %t, but they dance back, avoiding the blow."
+            ],
             "effects": [
                 {
                 "type": "damage",
