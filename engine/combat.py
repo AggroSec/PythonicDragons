@@ -19,13 +19,26 @@ def run_combat(player, enemies=[]):
 
 def handle_player_turn(player, enemies):
     choices = [ability["name"] for ability in player.abilities]
-    action = player_choice("It's your move, what do you choose?", choices, player)
+    action = player_choice("It's your move, what do you choose(number|info [num])?", choices, player)
     log_event(f"You have chosen to use: {action}")
     target = select_target(player, enemies, action)
     use_ability(player, target, action)
 
 def select_target(targeter: Character, enemies: list[Character], ability_name):
-    pass
+    #multiple allies not implemented, so if skill targets ally, it will ignore enemies
+    ability_info = {}
+    for ability in targeter.abilities:
+        if ability["name"] == ability_name:
+            ability_info = ability
+    first_effect = ability["effects"][0]
+    if first_effect["target"] == "ally":
+        return targeter
+    elif first_effect["target"] == "enemy":
+        enemy_list = [enemy.name for enemy in enemies]
+        enemy_name =player_choice("Who are you targeting(number)?", enemy_list, targeter, selecting_target=True)
+        for enemy in enemies:
+            if enemy.name == enemy_name:
+                return enemy
 
 def get_turn_order(initiative_dict):
     # separation to future proof for mid combat initiative changes. currently not handling ties, the turns fall how the sorted function sorts
@@ -48,7 +61,7 @@ def log_event(message):
     '''currently just prints to console, can be extended to work with GUI or TUI (hopefully) without effecting combat logic'''
     print(message)
 
-def player_choice(prompt, choices=[], player=None):
+def player_choice(prompt, choices=[], player=None, selecting_target=False):
     '''again thinking of future extensiblity, for now takes what the caller wants to prompt the user, and valid choices,
     and validates the player choice before returning the choice. if not valid, prompts to pick again until a valid choice is given'''
     print(prompt)
@@ -56,17 +69,19 @@ def player_choice(prompt, choices=[], player=None):
         print(f"[{i}] {opt}")
     while True:
         try:
-            choice = input("What is your choice (number|info [num])? ").strip().lower()
+            choice = input("What is your choice? ").strip().lower()
             if "info" in choice:
-                if 1 <= int(choice) <= len(choices):
-                    info_choice = choice.replace("info", "").strip()
+                info_choice = choice.replace("info", "").strip()
+                if 1 <= int(info_choice) <= len(choices):
                     ability_name = choices[int(info_choice)-1]
                     show_ability_info(ability_name, player)
                     continue
                 else:
                     raise ValueError
             if 1 <= int(choice) <= len(choices):
-                if can_use_ability(player, choices[int(choice)-1]):
+                if selecting_target:
+                    return choices[int(choice)-1]
+                elif can_use_ability(player, choices[int(choice)-1]):
                     return choices[int(choice)-1]
                 else:
                     raise ValueError
@@ -152,6 +167,10 @@ new_ability = {
   ]
 }
 player.add_ability(new_ability)
+enemy1 = EnemyNPC(1,1,1,1,1,1,1,1,12,"Bob the minion","1d2",10)
+enemy2 = EnemyNPC(1,1,1,1,1,1,1,1,12,"Bob the chieftain","1d6",50)
 choices = [ability["name"] for ability in player.abilities]
-action = player_choice("It's your move, what do you choose?", choices, player)
+action = player_choice("It's your move, what do you choose?", choices, player, selecting_target=False)
 log_event(f"You have chosen to use: {action}")
+target = select_target(player, [enemy1,enemy2], action)
+log_event(f"target info: {target.name}, HP:{target.current_hp}, AC:{target.ac}")
