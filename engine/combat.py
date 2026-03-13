@@ -113,7 +113,31 @@ def can_use_ability(player, ability_name):
     
 
 def use_ability(ability_user: Character, target: Character, ability_name=""):
-    pass
+    ability_hits = False
+    if ability_user == target:
+        ability_hits = True
+    else:
+        ability_hits = attack_roll(ability_user, target, ability_name)
+
+def attack_roll(ability_user, target, ability_name):
+    for ability in ability_user.abilities:
+        if ability["name"] == ability_name:
+            ability_info = ability
+    stat_mod = 0
+    if ability_info['modifier_stat'] == "physical":
+        str_mod = ability_user.get_modifier(ability_user.strength)
+        dex_mod = ability_user.get_modifier(ability_user.dex)
+        stat_mod = max(str_mod, dex_mod)
+    else:
+        stat_name = ability_info["modifier_stat"]
+        stat_mod = ability_user.get_modifier(getattr(ability_user, stat_name, 10)) #defaults to 10 if there's a weird stat mod.
+    roll, roll_list = dice_roller(20, 1, stat_mod) # attack rolls will not have advantage/disadvantage support in MVP. dis/advantage will mostly be for skill checks in the story
+    log_event(f"Attack rolled: {roll}({roll_list}+{stat_mod})")
+    if roll >= target.ac:
+        return True
+    else:
+        return False
+       
 
 def show_ability_info(name, player):
     for ability in player.abilities:
@@ -159,7 +183,7 @@ new_ability = {
     {
       "type": "spell_debuff",
       "stat": "attack_bonus",
-      "value": -2,
+      "value": 2,
       "duration": 2,
       "spell_slot_level": 0,
       "target": "enemy"
@@ -167,10 +191,12 @@ new_ability = {
   ]
 }
 player.add_ability(new_ability)
-enemy1 = EnemyNPC(1,1,1,1,1,1,1,1,12,"Bob the minion","1d2",10)
-enemy2 = EnemyNPC(1,1,1,1,1,1,1,1,12,"Bob the chieftain","1d6",50)
+enemy1 = EnemyNPC(1,1,1,1,10,1,1,1,10,"Bob the minion","1d2",10)
+enemy2 = EnemyNPC(1,1,1,1,10,1,1,1,20,"Bob the chieftain","1d6",50)
 choices = [ability["name"] for ability in player.abilities]
 action = player_choice("It's your move, what do you choose?", choices, player, selecting_target=False)
 log_event(f"You have chosen to use: {action}")
 target = select_target(player, [enemy1,enemy2], action)
 log_event(f"target info: {target.name}, HP:{target.current_hp}, AC:{target.ac}")
+does_hit = attack_roll(player, target, action)
+log_event(f"the attack hitting is: {does_hit}")
