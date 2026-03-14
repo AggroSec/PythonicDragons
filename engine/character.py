@@ -84,12 +84,12 @@ class Player(Character):
             "uses_per_rest": 0,
             "modifier_stat": "physical",
             "attack_descs": [
-                "You %v at %t, drawing blood from them.",
-                "You %v towards %t, scoring a hit."
+                "You (v) at (t), drawing blood from them.",
+                "You (v) towards (t), scoring a hit."
             ],
              "attack_misses": [
-                "You swing your weapon at %t, but it glances off of them, doing no damage.",
-                "You move to hit %t, but they dance back, avoiding the blow."
+                "You swing your weapon at (t), but it glances off of them, doing no damage.",
+                "You move to hit (t), but they dance back, avoiding the blow."
             ],
             "effects": [
                 {

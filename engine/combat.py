@@ -1,6 +1,7 @@
 from dice import *
 from character import *
 from tabulate import tabulate
+import random
 
 def run_combat(player, enemies=[]):
     '''
@@ -118,19 +119,64 @@ def use_ability(ability_user: Character, target: Character, ability_name=""):
         ability_hits = True
     else:
         ability_hits = attack_roll(ability_user, target, ability_name)
+    if ability_hits:
+        handle_effects(ability_user, target, ability_name)
+    else:
+        for ability in ability_user.abilities:
+            if ability_name == ability["name"]:
+                ability_misses = ability["attack_misses"]
+        miss_string = random.choice(ability_misses)
+        miss_string = miss_string.replace("(v)", random.choice(ability_user.weapon_verb)).replace("(a)", ability_user.name).replace("(t)", target.name)
+        log_event(f"MISS! {miss_string}")
+
+def handle_effects(user, target, ability_name):
+    for ability in user.abilities:
+        if ability_name == ability["name"]:
+            ability_effects = ability["effects"]
+            stat_mod = find_stat_mod(user, ability["modifier_stat"])
+            ability_hit_lines = ability["attack_descs"]
+    for effect in ability_effects:
+        match effect["type"]:
+            case "damage":
+                attack_string = effect["value"]
+                split_attack_string = attack_string.split("d")
+                if len(split_attack_string) == 1:
+                    damage = int(attack_string)
+                    target.current_hp -= damage
+                    log_event(f"{damage} was dealt to {target.name}")
+                elif len(split_attack_string) == 2:
+                    die_num = int(split_attack_string[0])
+                    die_sides = int(split_attack_string[1])
+                    damage, roll_list = dice_roller(die_sides, die_num, stat_mod)
+                    target.current_hp -= damage
+                    log_event(f"{damage}({roll_list}+{stat_mod}) was dealt to {target.name}")
+                    hit_line = random.choice(ability_hit_lines)
+                    hit_line = hit_line.replace("(v)", random.choice(user.weapon_verb)).replace("(a)", user.name).replace("(t)", target.name)
+                    log_event(hit_line)
+                else:
+                    raise ValueError("proper attack string was not provided in json data")
+            case "spell_damage":
+                pass
+            case "heal":
+                pass
+            case "spell_heal":
+                pass
+            case "buff":
+                pass
+            case "spell_buff":
+                pass
+            case "debuff":
+                pass
+            case "spell_debuff":
+                pass
+    
 
 def attack_roll(ability_user, target, ability_name):
     for ability in ability_user.abilities:
         if ability["name"] == ability_name:
             ability_info = ability
-    stat_mod = 0
-    if ability_info['modifier_stat'] == "physical":
-        str_mod = ability_user.get_modifier(ability_user.strength)
-        dex_mod = ability_user.get_modifier(ability_user.dex)
-        stat_mod = max(str_mod, dex_mod)
-    else:
-        stat_name = ability_info["modifier_stat"]
-        stat_mod = ability_user.get_modifier(getattr(ability_user, stat_name, 10)) #defaults to 10 if there's a weird stat mod.
+            ability_stat = ability["modifier_stat"]
+    stat_mod = find_stat_mod(ability_user, ability_stat)
     roll, roll_list = dice_roller(20, 1, stat_mod) # attack rolls will not have advantage/disadvantage support in MVP. dis/advantage will mostly be for skill checks in the story
     log_event(f"Attack rolled: {roll}({roll_list}+{stat_mod})")
     if roll >= target.ac:
@@ -138,6 +184,15 @@ def attack_roll(ability_user, target, ability_name):
     else:
         return False
        
+def find_stat_mod(character, ability_stat):
+    stat_mod = 0
+    if ability_stat == "physical":
+        str_mod = character.get_modifier(character.strength)
+        dex_mod = character.get_modifier(character.dex)
+        stat_mod = max(str_mod, dex_mod)
+    else:
+        stat_mod = character.get_modifier(getattr(character, ability_stat, 10)) #defaults to 10 if there's a weird stat mod.
+    return stat_mod
 
 def show_ability_info(name, player):
     for ability in player.abilities:
@@ -167,7 +222,7 @@ new_ability = {
   "uses_per_rest": 1,
   "modifier_stat": "wisdom",
   "attack_descs": [
-    "You pray to the heavens, and as you strike a holy bolt from the sky flies with you, smiting %t"
+    "You pray to the heavens, and as you strike a holy bolt from the sky flies with you, smiting (t)"
   ],
   "attack_misses": [
     "You pray for smiting power, but there is no answer... Silence fills the void."
@@ -175,7 +230,7 @@ new_ability = {
   "effects": [
     {
       "type": "spell_damage",
-      "value": "2d8",
+      "value": "8",
       "spell_slot_level": 1,
       "target": "enemy",
       "extra": {"damage_type": "radiant"}
@@ -198,5 +253,4 @@ action = player_choice("It's your move, what do you choose?", choices, player, s
 log_event(f"You have chosen to use: {action}")
 target = select_target(player, [enemy1,enemy2], action)
 log_event(f"target info: {target.name}, HP:{target.current_hp}, AC:{target.ac}")
-does_hit = attack_roll(player, target, action)
-log_event(f"the attack hitting is: {does_hit}")
+use_ability(player, target, action)
