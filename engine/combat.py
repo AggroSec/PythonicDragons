@@ -1,7 +1,7 @@
 from dice import *
 from character import *
 from tabulate import tabulate
-import random
+import random, uuid
 
 def run_combat(player, enemies=[]):
     '''
@@ -24,6 +24,21 @@ def handle_player_turn(player, enemies):
     log_event(f"You have chosen to use: {action}")
     target = select_target(player, enemies, action)
     use_ability(player, target, action)
+    if player != target:
+        status_update(player, target)
+
+def status_update(player, target):
+    target_hp_percent = (target.current_hp/target.max_hp) * 100
+    if target_hp_percent >= 75:
+        log_event(f"{target.name} looks fresh and ready for a fight — barely a scratch on them.")
+    elif target_hp_percent < 75 and target_hp_percent >= 50:
+        log_event(f"{target.name} is breathing harder now, a few cuts and bruises showing through, but they're still standing strong.")
+    elif target_hp_percent < 50 and target_hp_percent >= 25:
+        log_event(f"{target.name} is faltering — bloodied, staggering a little, but clinging to the fight with grim determination.")
+    elif target_hp_percent < 25 and target_hp_percent > 0:
+        log_event(f"{target.name} is on the verge of collapse — swaying, gasping, one good hit away from going down.")
+    elif target_hp_percent <= 0:
+        log_event(f"{target.name} collapses lifelessly to the ground — the fight has left them.")
 
 def select_target(targeter: Character, enemies: list[Character], ability_name):
     #multiple allies not implemented, so if skill targets ally, it will ignore enemies
@@ -31,8 +46,8 @@ def select_target(targeter: Character, enemies: list[Character], ability_name):
     for ability in targeter.abilities:
         if ability["name"] == ability_name:
             ability_info = ability
-    first_effect = ability["effects"][0]
-    if first_effect["target"] == "ally":
+    first_effect = ability_info["effects"][0]
+    if first_effect["target"] == "ally": # have a bug that needs to be squashed when we come back to this.
         return targeter
     elif first_effect["target"] == "enemy":
         enemy_list = [enemy.name for enemy in enemies]
@@ -117,10 +132,19 @@ def use_ability(ability_user: Character, target: Character, ability_name=""):
     ability_hits = False
     if ability_user == target:
         ability_hits = True
+        _, does_crit = attack_roll(ability_user, target, ability_name) #we'll let heals crit for now, we may just make it auto no crit. heals will still always hit
     else:
-        ability_hits = attack_roll(ability_user, target, ability_name)
+        ability_hits, does_crit = attack_roll(ability_user, target, ability_name)
     if ability_hits:
-        handle_effects(ability_user, target, ability_name)
+        if does_crit:
+            log_event(f"attack roll was a CRIT!")
+        handle_effects(ability_user, target, ability_name, does_crit)
+        for ability in ability_user.abilities:
+            if ability_name == ability["name"]:
+                ability_hit_lines = ability["attack_descs"]
+        hit_line = random.choice(ability_hit_lines)
+        hit_line = hit_line.replace("(v)", random.choice(ability_user.weapon_verb)).replace("(a)", ability_user.name).replace("(t)", target.name)
+        log_event(hit_line)
     else:
         for ability in ability_user.abilities:
             if ability_name == ability["name"]:
@@ -129,12 +153,13 @@ def use_ability(ability_user: Character, target: Character, ability_name=""):
         miss_string = miss_string.replace("(v)", random.choice(ability_user.weapon_verb)).replace("(a)", ability_user.name).replace("(t)", target.name)
         log_event(f"MISS! {miss_string}")
 
-def handle_effects(user, target, ability_name):
+def handle_effects(user, target, ability_name, does_crit):
     for ability in user.abilities:
         if ability_name == ability["name"]:
+            used_ability = ability
             ability_effects = ability["effects"]
             stat_mod = find_stat_mod(user, ability["modifier_stat"])
-            ability_hit_lines = ability["attack_descs"]
+    handle_rest_per_use(used_ability, user)
     for effect in ability_effects:
         match effect["type"]:
             case "damage":
@@ -142,36 +167,155 @@ def handle_effects(user, target, ability_name):
                 split_attack_string = attack_string.split("d")
                 if len(split_attack_string) == 1:
                     damage = int(attack_string)
-                    target.current_hp -= damage
+                    target.damage_hp(damage)
                     log_event(f"{damage} was dealt to {target.name}")
                 elif len(split_attack_string) == 2:
                     die_num = int(split_attack_string[0])
                     die_sides = int(split_attack_string[1])
                     damage, roll_list = dice_roller(die_sides, die_num, stat_mod)
-                    target.current_hp -= damage
+                    if does_crit:
+                        damage *= 2
+                    target.damage_hp(damage)
                     log_event(f"{damage}({roll_list}+{stat_mod}) was dealt to {target.name}")
-                    hit_line = random.choice(ability_hit_lines)
-                    hit_line = hit_line.replace("(v)", random.choice(user.weapon_verb)).replace("(a)", user.name).replace("(t)", target.name)
-                    log_event(hit_line)
                 else:
                     raise ValueError("proper attack string was not provided in json data")
             case "spell_damage":
-                pass
+                handle_spell_slots(effect, user)
+                attack_string = effect["value"]
+                split_attack_string = attack_string.split("d")
+                if len(split_attack_string) == 1:
+                    damage = int(attack_string)
+                    target.damage_hp(damage)
+                    log_event(f"{damage} was dealt to {target.name}")
+                elif len(split_attack_string) == 2:
+                    die_num = int(split_attack_string[0])
+                    die_sides = int(split_attack_string[1])
+                    damage, roll_list = dice_roller(die_sides, die_num, stat_mod)
+                    if does_crit:
+                        damage *= 2
+                    target.damage_hp(damage)
+                    log_event(f"{damage}({roll_list}+{stat_mod}) was dealt to {target.name}")
+                else:
+                    raise ValueError("proper attack string was not provided in json data")
             case "heal":
-                pass
+                heal_string = effect["value"]
+                split_heal_string = heal_string.split("d")
+                if len(split_heal_string) == 1:
+                    heal_amount = int(heal_string)
+                    target.heal_hp(heal_amount)
+                    log_event(f"{target.name} has been healed for {heal_amount}")
+                elif len(split_heal_string) == 2:
+                    die_num = int(split_heal_string[0])
+                    die_sides = int(split_heal_string[1])
+                    heal, roll_list = dice_roller(die_sides, die_num, stat_mod)
+                    if does_crit:
+                        heal *= 2
+                    target.heal_hp(heal)
+                    log_event(f"{target.name} was healed for {heal}({roll_list}+{stat_mod})")
             case "spell_heal":
-                pass
+                handle_spell_slots(effect, user)
+                heal_string = effect["value"]
+                split_heal_string = heal_string.split("d")
+                if len(split_heal_string) == 1:
+                    heal_amount = int(heal_string)
+                    target.heal_hp(heal_amount)
+                    log_event(f"{target.name} has been healed for {heal_amount}")
+                elif len(split_heal_string) == 2:
+                    die_num = int(split_heal_string[0])
+                    die_sides = int(split_heal_string[1])
+                    heal, roll_list = dice_roller(die_sides, die_num, stat_mod)
+                    if does_crit:
+                        heal *= 2
+                    target.heal_hp(heal)
+                    log_event(f"{target.name} was healed for {heal}({roll_list}+{stat_mod})")
             case "buff":
-                pass
+                buff_stat = effect["stat"]
+                buff_by = effect["value"]
+                duration = effect["duration"]
+                if does_crit:
+                    buff_by *= 2
+                target_stat_current = getattr(target, buff_stat)
+                buffed_total = target_stat_current + buff_by
+                setattr(target, buff_stat, buffed_total)
+                upper_buff_stat = buff_stat.upper()
+                log_event(f"{target.name} has had their {upper_buff_stat} increased by {buff_by}({target_stat_current}->{getattr(target, buff_stat)})")
+                buff_info = {
+                    "stat": buff_stat,
+                    "value": buff_by,
+                    "duration_left": duration,
+                    "id": str(uuid.uuid4()) #unique identifiers for removal
+                }
+                target.buffs.append(buff_info)
             case "spell_buff":
-                pass
+                handle_spell_slots(effect, user)
+                buff_stat = effect["stat"]
+                buff_by = effect["value"]
+                duration = effect["duration"]
+                if does_crit:
+                    buff_by *= 2
+                target_stat_current = getattr(target, buff_stat)
+                buffed_total = target_stat_current + buff_by
+                setattr(target, buff_stat, buffed_total)
+                upper_buff_stat = buff_stat.upper()
+                log_event(f"{target.name} has had their {upper_buff_stat} increased by {buff_by}({target_stat_current}->{getattr(target, buff_stat)})")
+                buff_info = {
+                    "stat": buff_stat,
+                    "value": buff_by,
+                    "duration_left": duration,
+                    "id": str(uuid.uuid4())
+                }
+                target.buffs.append(buff_info)
             case "debuff":
-                pass
+                debuff_stat = effect["stat"]
+                debuff_by = effect["value"]
+                duration = effect["duration"]
+                if does_crit:
+                    debuff_by *= 2
+                target_stat_current = getattr(target, debuff_stat)
+                debuffed_total = target_stat_current - debuff_by
+                setattr(target, debuff_stat, debuffed_total)
+                upper_debuff_stat = debuff_stat.upper()
+                log_event(f"{target.name} has had their {upper_debuff_stat} decreased by {debuff_by}({target_stat_current}->{getattr(target, debuff_stat)})")
+                debuff_info = {
+                    "stat": debuff_stat,
+                    "value": debuff_by,
+                    "duration_left": duration,
+                    "id": str(uuid.uuid4())
+                }
+                target.debuffs.append(debuff_info)
             case "spell_debuff":
-                pass
+                handle_spell_slots(effect, user)
+                debuff_stat = effect["stat"]
+                debuff_by = effect["value"]
+                duration = effect["duration"]
+                if does_crit:
+                    debuff_by *= 2
+                target_stat_current = getattr(target, debuff_stat)
+                debuffed_total = target_stat_current - debuff_by
+                setattr(target, debuff_stat, debuffed_total)
+                upper_debuff_stat = debuff_stat.upper()
+                log_event(f"{target.name} has had their {upper_debuff_stat} decreased by {debuff_by}({target_stat_current}->{getattr(target, debuff_stat)})")
+                debuff_info = {
+                    "stat": debuff_stat,
+                    "value": debuff_by,
+                    "duration_left": duration,
+                    "id": str(uuid.uuid4())
+                }
+                target.debuffs.append(debuff_info)
     
+def handle_rest_per_use(ability, player):
+    if ability["uses_per_rest"] > 0:
+        if ability["name"] not in player.rest_usage:
+            player.rest_usage[ability["name"]] = 1
+        else:
+            player.rest_usage[ability["name"]] += 1
+
+def handle_spell_slots(effect, player):
+    if effect["spell_slot_level"] > 0:
+        player.spell_slots[str(effect["spell_slot_level"])] -= 1
 
 def attack_roll(ability_user, target, ability_name):
+    does_crit = False
     for ability in ability_user.abilities:
         if ability["name"] == ability_name:
             ability_info = ability
@@ -179,10 +323,12 @@ def attack_roll(ability_user, target, ability_name):
     stat_mod = find_stat_mod(ability_user, ability_stat)
     roll, roll_list = dice_roller(20, 1, stat_mod) # attack rolls will not have advantage/disadvantage support in MVP. dis/advantage will mostly be for skill checks in the story
     log_event(f"Attack rolled: {roll}({roll_list}+{stat_mod})")
-    if roll >= target.ac:
-        return True
+    if roll - stat_mod >= 20: # doing subtraction here to get the raw roll, instead of trying to pull the roll list through. may change later.
+        does_crit = True
+    if roll >= target.ac or does_crit:
+        return True, does_crit
     else:
-        return False
+        return False, False
        
 def find_stat_mod(character, ability_stat):
     stat_mod = 0
@@ -215,12 +361,12 @@ def show_ability_info(name, player):
                 ])
             log_event(tabulate(effects_data, headers=["Type", "Value", "Target", "Spell Slot Level", "Effected Stat", "Duration"],tablefmt="fancy_grid"))
 
-player = Player(1, 10, 16, 16, 12, 10, 8, 8, 15, "AggroSec", "2d6", {"1": 0}, "Greataxe", ["swing", "chop", "cleave"])
+player = Player(1, 10, 16, 16, 12, 10, 8, 8, 15, "AggroSec", "2d6", {"1": 1}, "Greataxe", ["swing", "chop", "cleave"])
 new_ability = {
   "name": "Smite Evil",
   "description": "Strike with holy power, harming and weakening undead",
-  "uses_per_rest": 1,
-  "modifier_stat": "wisdom",
+  "uses_per_rest": 0,
+  "modifier_stat": "wis",
   "attack_descs": [
     "You pray to the heavens, and as you strike a holy bolt from the sky flies with you, smiting (t)"
   ],
@@ -237,7 +383,7 @@ new_ability = {
     },
     {
       "type": "spell_debuff",
-      "stat": "attack_bonus",
+      "stat": "strength",
       "value": 2,
       "duration": 2,
       "spell_slot_level": 0,
@@ -245,12 +391,78 @@ new_ability = {
     }
   ]
 }
+player.add_ability(
+    {
+    "name": "Power Swing",
+    "description": "During travels doing trades, you have learned to put some oomph in your weapon attacks",
+    "uses_per_rest": 3,
+    "modifier_stat": "physical",
+    "attack_descs": [
+        "Singing out in a loud voice, (a) enunciates, 'glory be, look at me, put some OOMPH in this swing' as he swings his weapon at (t)"
+    ],
+    "attack_misses": [
+        "N/A"
+    ],
+    "effects": [
+        {
+        "type": "damage",
+        "value": "2d12",
+        "target": "enemy"
+        }
+    ]
+    }
+)
+player.add_ability(
+    {
+    "name": "Derp Heal",
+    "description": "During travels doing trades, you have learned to sing a healing song of magic",
+    "uses_per_rest": 3,
+    "modifier_stat": "wis",
+    "attack_descs": [
+        "Singing out in a loud voice, (a) enunciates, 'glory be, look at me, heal me with sing'"
+    ],
+    "attack_misses": [
+        "N/A"
+    ],
+    "effects": [
+        {
+        "type": "heal",
+        "value": "1d4",
+        "target": "ally"
+        }
+    ]
+    }
+)
+player.add_ability(
+    {
+    "name": "Singing Heal",
+    "description": "During travels doing trades, you have learned to sing a healing song of magic",
+    "uses_per_rest": 2,
+    "modifier_stat": "wis",
+    "attack_descs": [
+        "Singing out in a loud voice, (a) enunciates, 'glory be, look at me, heal me with sing'"
+    ],
+    "attack_misses": [
+        "N/A"
+    ],
+    "effects": [
+        {
+        "type": "heal",
+        "value": "1d8",
+        "target": "ally"
+        },
+        {
+            "type": "spell_buff",
+            "stat": "wis",
+            "value": 2,
+            "duration": 3,
+            "spell_slot_level": 1,
+            "target": "ally"
+        }
+    ]
+    }
+)
 player.add_ability(new_ability)
-enemy1 = EnemyNPC(1,1,1,1,10,1,1,1,10,"Bob the minion","1d2",10)
+enemy1 = EnemyNPC(1,20,1,10,10,1,1,1,10,"Bob the minion","1d2",10)
 enemy2 = EnemyNPC(1,1,1,1,10,1,1,1,20,"Bob the chieftain","1d6",50)
-choices = [ability["name"] for ability in player.abilities]
-action = player_choice("It's your move, what do you choose?", choices, player, selecting_target=False)
-log_event(f"You have chosen to use: {action}")
-target = select_target(player, [enemy1,enemy2], action)
-log_event(f"target info: {target.name}, HP:{target.current_hp}, AC:{target.ac}")
-use_ability(player, target, action)
+handle_player_turn(player, [enemy1, enemy2])
