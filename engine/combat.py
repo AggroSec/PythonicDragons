@@ -1,7 +1,7 @@
-from dice import *
-from character import *
+from engine.dice import *
+from engine.character import *
 from tabulate import tabulate
-import random, uuid
+import random, uuid, time
 
 def run_combat(player, enemies=[]):
     '''
@@ -11,16 +11,200 @@ def run_combat(player, enemies=[]):
     If this project takes off, people want things added, I come back to improve when I have more time I'll add things like bonus actions. For now to keep
     it simple this is one of the few things that will be left out/changed from actual DnD rules
     '''
-
-    log_event("Combat has been initiated!")
+    turn_break = "◆──────────────────────────────────────────────◆"
+    round_break = "᚛᚛᚛᚛᚛᚛᚛᚛᚛᚛᚛᚛᚛᚛᚛᚛᚛᚛᚛᚛᚛᚛᚛᚛᚛᚛᚛᚛᚛᚛"
+    log_event("======Combat has been initiated!======")
+    time.sleep(0.5)
     initiative = roll_initiative(player, enemies)
     turn_order = get_turn_order(initiative)
     current_round = 1
     log_event(f"Initiatives have been determined: {turn_order}")
+    game_over = False
+    while not game_over:
+        log_event(round_break)
+        log_event(f"Round {current_round} start")
+        log_event(round_break)
+        for name in turn_order:
+            if name == player.name:
+                log_event(turn_break)
+                log_event(f"{player.name}'s turn")
+                log_event(turn_break)
+                time.sleep(0.5)
+                handle_player_turn(player, enemies)
+                time.sleep(1.0)
+            else:
+                for enemy in enemies:
+                    if name == enemy.name:
+                        log_event(turn_break)
+                        log_event(f"{enemy.name}'s turn")
+                        log_event(turn_break)
+                        time.sleep(0.5)
+                        handle_enemy_turn(enemy, player)
+                        time.sleep(1.0)
+                        status_update(enemy, player)
+                        time.sleep(0.5)
+        turn_order, game_over = round_clean_up(player, enemies, initiative)
+        player_info_prompt(player)
+        time.sleep(1.0)
+        log_event(round_break)
+        log_event(f"Round {current_round} END")
+        log_event(round_break)
+        time.sleep(0.5)
+        current_round += 1
+    if player.current_hp > 0:
+        log_event("You won the combat! Congrats!") #placeholder till we get to scene movement
+    else:
+        log_event("You failed, the enemies have utterly destroyed you.") #also a placeholder
+
+def player_info_prompt(player):
+    buffs = ""
+    debuffs = ""
+    for buff in player.buffs:
+        stat = buff["stat"]
+        value = buff["value"]
+        duration = buff["duration_left"]
+        buffs += f"<{stat}|V:{value}|D:{duration}>"
+    for debuff in player.debuffs:
+        stat = debuff["stat"]
+        value = debuff["value"]
+        duration = debuff["duration_left"]
+        debuffs += f">{stat}|V:{value}|D:{duration}<"
+    prompt_string = f"Status(Name: {player.name} | Health: {player.current_hp}/{player.max_hp} | USEAGE: {player.rest_usage} | SPELL SLOTS: {player.spell_slots} | BUFFS: {buffs} | DEBUFFS: {debuffs})"
+    log_event(prompt_string)
+
+def round_clean_up(player, enemies, initiative_dict):
+    game_over = False
+    if player.current_hp <= 0:
+        game_over = True
+    all_enemies_dead = True
+    for enemy in enemies:
+        if enemy.current_hp > 0:
+            all_enemies_dead = False
+    if all_enemies_dead:
+        game_over = True
+    if game_over:
+        return [], game_over
+    
+    handle_buffs_and_debuffs(player)
+    dead_enemies = []
+    for enemy in enemies:
+        if enemy.current_hp > 0:
+            handle_buffs_and_debuffs(enemy)
+        else:
+            dead_enemies.append(enemy.name)
+    
+    for dead_enemy in dead_enemies:
+        if dead_enemy in initiative_dict:
+            del initiative_dict[dead_enemy]
+    
+    new_turn_order = get_turn_order(initiative_dict)
+
+    return new_turn_order, game_over
+    
+
+def handle_buffs_and_debuffs(character):
+    removal_buffs = []
+    removal_debuffs = []
+
+    for buff in character.buffs:
+        unique_id = buff["id"]
+        if buff["duration_left"] <= 0:
+            removal_buffs.append(unique_id)
+        else:
+            buff["duration_left"] -= 1
+    
+    for debuff in character.debuffs:
+        unique_id = debuff["id"]
+        if debuff["duration_left"] <= 0:
+            removal_debuffs.append(unique_id)
+        else:
+            debuff["duration_left"] -= 1
+
+    for unique_id in removal_buffs:
+        for buff in character.buffs:
+            if buff["id"] == unique_id:
+                stat = buff["stat"]
+                value = buff["value"]
+                current_stat = getattr(character, stat)
+                new_stat = current_stat - value
+                setattr(character, stat, new_stat)
+                log_event(f"{character.name}'s {stat} buff has expired.(-{value})")
+
+    for unique_id in removal_debuffs:
+        for debuff in character.debuffs:
+            if debuff["id"] == unique_id:
+                stat = debuff["stat"]
+                value = debuff["value"]
+                current_stat = getattr(character, stat)
+                new_stat = current_stat + value
+                setattr(character, stat, new_stat)
+                log_event(f"{character.name}'s {stat} debuff has expired.(+{value})")
+
+    character.buffs = [b for b in character.buffs if b["id"] not in removal_buffs]
+    character.debuffs = [d for d in character.debuffs if d["id"] not in removal_debuffs]
+
+def handle_enemy_turn(enemy, player):
+    if enemy.current_hp <= 0:
+        log_event(f"{enemy.name} is dead, no longer a threat to you.")
+        return
+    ability_roll = random.randint(1, 100)
+    if ability_roll <= enemy.ability_use_chance:
+        handle_enemy_abilities(enemy, player)
+    else:
+        enemy_basic_attack(enemy, player)
+
+def handle_enemy_abilities(enemy, player):
+    if not enemy.abilities:
+        log_event("WARNING: Enemy does not have abilities, but chance level was provided, check json data. Running basic attack")
+        enemy_basic_attack(enemy, player)
+        return
+    chosen_ability = random.choice(enemy.abilities)
+    if chosen_ability["effects"][0]["target"] == "ally":
+        target = enemy
+    else:
+        target = player
+    use_ability(enemy, target, chosen_ability["name"])
+
+def enemy_basic_attack(enemy, player):
+    stat_mod = find_stat_mod(enemy, "physical")
+    does_hit, does_crit = attack_roll(enemy, player, "", False, stat_mod)
+    if does_hit or does_crit:
+        die_num = enemy.basic_attack["num_die"]
+        sides = enemy.basic_attack["sides"]
+        damage, rolls = dice_roller(sides, die_num, stat_mod)
+        if does_crit:
+            damage *= 2
+            log_event(f"{enemy.name} scores a CRIT!")
+        player.damage_hp(damage)
+        weapon = enemy.weapon
+        verb = random.choice(enemy.weapon_verb)
+        if damage >= 30:
+            blow_string = "~*cataclysmic*~ strike of pure ruin on you."
+        elif damage >= 20:
+            blow_string = "~-earth-shattering*~ blow on you."
+        elif damage >= 15:
+            blow_string = "-devastating- blow, staggering you."
+        elif damage >= 10:
+            blow_string = "hefty blow, driving you back, causing moderate bleeding."
+        elif damage >= 5:
+            blow_string = "solid blow, opening minor wounds on you."
+        elif damage >= 1:
+            blow_string = "glancing blow, barely causing a scratch."
+        else:
+            blow_string = "frail blow, bouncing off you harmlessly."
+        attack_desc = f"{enemy.name} {verb} their {weapon} at you, landing a {blow_string} ({damage}[{rolls}+{stat_mod}])"
+        log_event(attack_desc)
+    else:
+        miss_strings = [
+            f"{enemy.name} moves to attack you, you dodge to the side, the attack wiffing air.",
+            f"{enemy.name} swings at you, the blow glances off your armor."
+        ]
+        miss_string = random.choice(miss_strings)
+        log_event(miss_string)
 
 def handle_player_turn(player, enemies):
     choices = [ability["name"] for ability in player.abilities]
-    action = player_choice("It's your move, what do you choose(number|info [num])?", choices, player)
+    action = player_choice("It's your move, what do you choose(number|info [num]|status)?", choices, player)
     log_event(f"You have chosen to use: {action}")
     target = select_target(player, enemies, action)
     use_ability(player, target, action)
@@ -50,8 +234,8 @@ def select_target(targeter: Character, enemies: list[Character], ability_name):
     if first_effect["target"] == "ally": # have a bug that needs to be squashed when we come back to this.
         return targeter
     elif first_effect["target"] == "enemy":
-        enemy_list = [enemy.name for enemy in enemies]
-        enemy_name =player_choice("Who are you targeting(number)?", enemy_list, targeter, selecting_target=True)
+        enemy_list = [enemy.name for enemy in enemies if enemy.current_hp > 0]
+        enemy_name = player_choice("Who are you targeting(number)?", enemy_list, targeter, selecting_target=True)
         for enemy in enemies:
             if enemy.name == enemy_name:
                 return enemy
@@ -65,10 +249,12 @@ def roll_initiative(player, enemies=[]):
     log_event("Let us roll for initiative!")
     player_initiative, actual_roll = dice_roller(20, 1, player.get_modifier(player.dex))
     initiative_rolls[player.name] = player_initiative
+    time.sleep(0.5)
     log_event(f"{player.name} rolled a {player_initiative}({actual_roll}+{player.get_modifier(player.dex)})")
     for enemy in enemies:
         initiative_roll, actual_roll = dice_roller(20, 1, enemy.get_modifier(enemy.dex))
         initiative_rolls[enemy.name] = initiative_roll
+        time.sleep(0.5)
         log_event(f"{enemy.name} rolled a {initiative_roll}({actual_roll}+{enemy.get_modifier(enemy.dex)})")
     return initiative_rolls
 
@@ -94,6 +280,9 @@ def player_choice(prompt, choices=[], player=None, selecting_target=False):
                     continue
                 else:
                     raise ValueError
+            if "status" in choice:
+                player_info_prompt(player)
+                continue
             if 1 <= int(choice) <= len(choices):
                 if selecting_target:
                     return choices[int(choice)-1]
@@ -144,7 +333,9 @@ def use_ability(ability_user: Character, target: Character, ability_name=""):
                 ability_hit_lines = ability["attack_descs"]
         hit_line = random.choice(ability_hit_lines)
         hit_line = hit_line.replace("(v)", random.choice(ability_user.weapon_verb)).replace("(a)", ability_user.name).replace("(t)", target.name)
-        log_event(hit_line)
+        damage_art_left = "───═( "
+        damage_art_right = " )═───"
+        log_event(f"{damage_art_left}{hit_line}{damage_art_right}")
     else:
         for ability in ability_user.abilities:
             if ability_name == ability["name"]:
@@ -314,13 +505,17 @@ def handle_spell_slots(effect, player):
     if effect["spell_slot_level"] > 0:
         player.spell_slots[str(effect["spell_slot_level"])] -= 1
 
-def attack_roll(ability_user, target, ability_name):
+def attack_roll(ability_user, target, ability_name="", get_stat=True, passed_mod=0):
     does_crit = False
-    for ability in ability_user.abilities:
-        if ability["name"] == ability_name:
-            ability_info = ability
-            ability_stat = ability["modifier_stat"]
-    stat_mod = find_stat_mod(ability_user, ability_stat)
+    if ability_name != "":
+        for ability in ability_user.abilities:
+            if ability["name"] == ability_name:
+                ability_info = ability
+                ability_stat = ability["modifier_stat"]
+    if get_stat:
+        stat_mod = find_stat_mod(ability_user, ability_stat)
+    else:
+        stat_mod = passed_mod
     roll, roll_list = dice_roller(20, 1, stat_mod) # attack rolls will not have advantage/disadvantage support in MVP. dis/advantage will mostly be for skill checks in the story
     log_event(f"Attack rolled: {roll}({roll_list}+{stat_mod})")
     if roll - stat_mod >= 20: # doing subtraction here to get the raw roll, instead of trying to pull the roll list through. may change later.
@@ -361,108 +556,4 @@ def show_ability_info(name, player):
                 ])
             log_event(tabulate(effects_data, headers=["Type", "Value", "Target", "Spell Slot Level", "Effected Stat", "Duration"],tablefmt="fancy_grid"))
 
-player = Player(1, 10, 16, 16, 12, 10, 8, 8, 15, "AggroSec", "2d6", {"1": 1}, "Greataxe", ["swing", "chop", "cleave"])
-new_ability = {
-  "name": "Smite Evil",
-  "description": "Strike with holy power, harming and weakening undead",
-  "uses_per_rest": 0,
-  "modifier_stat": "wis",
-  "attack_descs": [
-    "You pray to the heavens, and as you strike a holy bolt from the sky flies with you, smiting (t)"
-  ],
-  "attack_misses": [
-    "You pray for smiting power, but there is no answer... Silence fills the void."
-  ],
-  "effects": [
-    {
-      "type": "spell_damage",
-      "value": "8",
-      "spell_slot_level": 1,
-      "target": "enemy",
-      "extra": {"damage_type": "radiant"}
-    },
-    {
-      "type": "spell_debuff",
-      "stat": "strength",
-      "value": 2,
-      "duration": 2,
-      "spell_slot_level": 0,
-      "target": "enemy"
-    }
-  ]
-}
-player.add_ability(
-    {
-    "name": "Power Swing",
-    "description": "During travels doing trades, you have learned to put some oomph in your weapon attacks",
-    "uses_per_rest": 3,
-    "modifier_stat": "physical",
-    "attack_descs": [
-        "Singing out in a loud voice, (a) enunciates, 'glory be, look at me, put some OOMPH in this swing' as he swings his weapon at (t)"
-    ],
-    "attack_misses": [
-        "N/A"
-    ],
-    "effects": [
-        {
-        "type": "damage",
-        "value": "2d12",
-        "target": "enemy"
-        }
-    ]
-    }
-)
-player.add_ability(
-    {
-    "name": "Derp Heal",
-    "description": "During travels doing trades, you have learned to sing a healing song of magic",
-    "uses_per_rest": 3,
-    "modifier_stat": "wis",
-    "attack_descs": [
-        "Singing out in a loud voice, (a) enunciates, 'glory be, look at me, heal me with sing'"
-    ],
-    "attack_misses": [
-        "N/A"
-    ],
-    "effects": [
-        {
-        "type": "heal",
-        "value": "1d4",
-        "target": "ally"
-        }
-    ]
-    }
-)
-player.add_ability(
-    {
-    "name": "Singing Heal",
-    "description": "During travels doing trades, you have learned to sing a healing song of magic",
-    "uses_per_rest": 2,
-    "modifier_stat": "wis",
-    "attack_descs": [
-        "Singing out in a loud voice, (a) enunciates, 'glory be, look at me, heal me with sing'"
-    ],
-    "attack_misses": [
-        "N/A"
-    ],
-    "effects": [
-        {
-        "type": "heal",
-        "value": "1d8",
-        "target": "ally"
-        },
-        {
-            "type": "spell_buff",
-            "stat": "wis",
-            "value": 2,
-            "duration": 3,
-            "spell_slot_level": 1,
-            "target": "ally"
-        }
-    ]
-    }
-)
-player.add_ability(new_ability)
-enemy1 = EnemyNPC(1,20,1,10,10,1,1,1,10,"Bob the minion","1d2",10)
-enemy2 = EnemyNPC(1,1,1,1,10,1,1,1,20,"Bob the chieftain","1d6",50)
-handle_player_turn(player, [enemy1, enemy2])
+

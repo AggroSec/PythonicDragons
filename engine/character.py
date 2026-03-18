@@ -22,14 +22,14 @@ class Character:
     
     def heal_hp(self, amount):
         if amount < 0:
-            raise ValueError("what is this sorcery called 'negative numbers'")
+            amount = 0 #no sorcerous negative numbers here
         self.current_hp += amount
         if self.current_hp > self.max_hp:
             self.current_hp = self.max_hp
 
     def damage_hp(self, amount):
         if amount < 0:
-            raise ValueError("what is this sorcery called 'negative numbers'")
+            amount = 0 #no sorcerous negative numbers here
         self.current_hp -= amount
         if self.current_hp < 0:
             self.current_hp = 0
@@ -102,9 +102,11 @@ class Player(Character):
 
 
 class EnemyNPC(Character):
-    def __init__(self, level, max_hp, con, strength, dex, intel, wis, ris, ac, name, base_attack, ability_use_chance):
+    def __init__(self, level, max_hp, con, strength, dex, intel, wis, ris, ac, name, base_attack, ability_use_chance, weapon="dagger", weapon_verb=["stabs","slices"]):
         super().__init__(level, max_hp, con, strength, dex, intel, wis, ris, ac, base_attack)
         self.ability_use_chance = ability_use_chance
         self.name = name
         self.buffs = []
         self.debuffs = []
+        self.weapon = weapon
+        self.weapon_verb = weapon_verb
