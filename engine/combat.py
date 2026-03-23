@@ -266,9 +266,9 @@ def log_event(message):
 def player_choice(prompt, choices=[], player=None, selecting_target=False):
     '''again thinking of future extensiblity, for now takes what the caller wants to prompt the user, and valid choices,
     and validates the player choice before returning the choice. if not valid, prompts to pick again until a valid choice is given'''
-    print(prompt)
+    log_event(prompt)
     for i, opt in enumerate(choices, 1):
-        print(f"[{i}] {opt}")
+        log_event(f"[{i}] {opt}")
     while True:
         try:
             choice = input("What is your choice? ").strip().lower()
@@ -291,9 +291,9 @@ def player_choice(prompt, choices=[], player=None, selecting_target=False):
                 else:
                     raise ValueError
             else:
-                print(f"Choice must be between 1 and {len(choices)}")
+                log_event(f"Choice must be between 1 and {len(choices)}")
         except ValueError:
-            print("Invalid choice, try again!")
+            log_event("Invalid choice, try again!")
 
 def can_use_ability(player, ability_name):
     chosen_ability = {}
