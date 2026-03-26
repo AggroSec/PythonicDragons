@@ -1,6 +1,7 @@
 from engine.character import *
 from engine.dice import *
 from engine.combat import *
+from engine.choice import *
 def main():
     player = Player(1, 10, 16, 16, 12, 10, 8, 8, 15, "AggroSec", "2d6", {"1": 1}, "Greataxe", ["swing", "chop", "cleave"])
     new_ability = {
@@ -156,6 +157,52 @@ def main():
         ]
         }
     )
+
+    intro_scene = {
+      "text": "You arrive at a small border village. An old scout offers information about the road ahead.",
+      "combat": False,
+      "rest": False,
+      "check": False,
+      "choices": [
+        {
+          "text": "Talk to the scout for information",
+          "next": "info_conversation"
+        },
+        {
+          "text": "Venture straight into the woods",
+          "next": "venture_out"
+        },
+        {
+          "text": "Scout ahead quietly",
+          "next": "scouting_check"
+        }
+      ]
+    }
+
+    skill_check_scene = {
+        "text": "You attempt to scout ahead quietly...",
+        "combat": False,
+        "rest": False,
+        "check": True,
+        "check_info": {
+            "type": "skill",
+            "stat": "dex",
+            "dc": 13,
+            "advantage": False,
+            "disadvantage": False,
+            "success": "scout_success",
+            "failure": "venture_out"
+        },
+        "choices": []
+        }
+
+
+
+    result1 = present_scene(intro_scene, player)
+    print(f"Next scene: {result1}")
+    result2 = present_scene(skill_check_scene, player)
+    print(f"Next scene: {result2}")
+
     run_combat(player, [enemy1,enemy2])
 
 
