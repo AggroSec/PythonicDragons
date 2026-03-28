@@ -1,0 +1,171 @@
+{
+  "title": "Test Adventure - Updated Flow with Advantage/Disadvantage",
+  "start_scene": "intro_village",
+  "scenes": {
+    "intro_village": {
+      "text": "You arrive at a small border village. An old scout offers information about the road ahead.",
+      "combat": false,
+      "rest": false,
+      "check": false,
+      "choices": [
+        {
+          "text": "Talk to the scout for information",
+          "next": "info_conversation"
+        },
+        {
+          "text": "Venture straight into the woods",
+          "next": "venture_out"
+        },
+        {
+          "text": "Scout ahead quietly",
+          "next": "scouting_check"
+        }
+      ]
+    },
+
+    "info_conversation": {
+      "text": "The scout shares rumors of bandits and weak goblin patrols. He advises a safer path.",
+      "combat": false,
+      "rest": false,
+      "check": false,
+      "choices": [
+        {
+          "text": "Take the safer path (easier battle)",
+          "next": "easier_battle"
+        },
+        {
+          "text": "Take the dangerous path anyway",
+          "next": "venture_out"
+        }
+      ]
+    },
+
+    "scouting_check": {
+      "text": "You attempt to scout ahead quietly...",
+      "combat": false,
+      "rest": false,
+      "check": true,
+      "check_info": {
+        "type": "skill",
+        "stat": "dex",
+        "dc": 13,
+        "advantage": false,
+        "disadvantage": false,
+        "success": "scout_success",
+        "failure": "venture_out"
+      },
+      "choices": []
+    },
+
+    "scout_success": {
+      "text": "You spot the patrol and avoid it completely. You continue forward.",
+      "combat": false,
+      "rest": false,
+      "check": false,
+      "choices": [
+        {
+          "text": "Continue toward the ruins",
+          "next": "post_first_battle"
+        }
+      ]
+    },
+
+    "venture_out": {
+      "text": "You push forward and run into a group of enemies!",
+      "combat": true,
+      "rest": false,
+      "check": false,
+      "combat_info": {
+        "enemies": ["orc_warrior", "goblin_chieftain"],
+        "win": "post_first_battle",
+        "lose": "game_over"
+      },
+      "choices": []
+    },
+
+    "easier_battle": {
+      "text": "You take the safer path and encounter a small goblin patrol!",
+      "combat": true,
+      "rest": false,
+      "check": false,
+      "combat_info": {
+        "enemies": ["goblin_scout", "goblin_scout"],
+        "win": "post_first_battle",
+        "lose": "game_over"
+      },
+      "choices": []
+    },
+
+    "post_first_battle": {
+      "text": "You have survived the first encounter. The path ahead leads to the bandit leader's camp. Do you press on immediately or rest first?",
+      "combat": false,
+      "rest": false,
+      "check": false,
+      "choices": [
+        {
+          "text": "Press on to face the boss",
+          "next": "boss_battle"
+        },
+        {
+          "text": "Rest and recover first",
+          "next": "rest_before_boss"
+        }
+      ]
+    },
+
+    "rest_before_boss": {
+      "text": "You take a short rest to recover your strength before the final challenge.",
+      "combat": false,
+      "rest": true,
+      "check": false,
+      "choices": [
+        {
+          "text": "Continue to the boss camp",
+          "next": "boss_battle"
+        }
+      ]
+    },
+
+    "boss_battle": {
+      "text": "You reach the bandit leader's camp. The final fight begins!",
+      "combat": true,
+      "rest": false,
+      "check": false,
+      "combat_info": {
+        "enemies": ["bandit_leader"],
+        "win": "victory",
+        "lose": "game_over"
+      },
+      "choices": []
+    },
+
+    "victory": {
+      "text": "You have defeated the bandit leader! The village is safe and you return victorious.",
+      "combat": false,
+      "rest": false,
+      "check": false,
+      "choices": [
+        {
+          "text": "Return home",
+          "next": "end_credits"
+        }
+      ]
+    },
+
+    "game_over": {
+      "text": "You have fallen in battle... the forest claims another soul.",
+      "combat": false,
+      "rest": false,
+      "check": false,
+      "end": "game_over"
+    },
+
+    "end_credits": {
+      "text": "The End. Thanks for testing the system!",
+      "combat": false,
+      "rest": false,
+      "check": false,
+      "choices": []
+    }
+  }
+}

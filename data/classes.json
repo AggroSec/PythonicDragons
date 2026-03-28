@@ -1,0 +1,337 @@
+[
+    {
+        "name": "Fighter",
+        "description": "A master of martial arts, skilled with a variety of weapons and armor. High constitution and strength, with a focus on physical combat. Starts with a 1 handed weapon and shield.",
+        "hit_die": 10,
+        "weapons": {
+            "battleaxe": {"attack_string": "1d8", "weapon_verb": ["swing", "slash", "chop", "cleave"]},
+            "longsword": {"attack_string": "1d8", "weapon_verb": ["swing", "thrust", "pierce", "slash"]},
+            "rapier": {"attack_string": "1d8", "weapon_verb": ["thrust", "pierce", "stab", "lunge"]},
+            "morningstar": {"attack_string": "1d8", "weapon_verb": ["swing", "bash", "crush", "smash"]}
+        },
+        "stat_modifiers": {
+            "strength": 1,
+            "dex": 0,
+            "con": 2,
+            "intel": 0,
+            "wis": 0,
+            "ris": 0
+        },
+        "abilities": [
+            {
+                "name": "Second Wind",
+                "description": "Twice per rest, you can use an action to regain hit points equal to 1d10 + constitution modifier.",
+                "uses_per_rest": 2,
+                "modifier_stat": "con",
+                "attack_descs": [
+                    "You take a deep breath and focus your energy, allowing you to recover from your wounds.",
+                    "You feel a surge of adrenaline as you push through the pain, regaining your strength.",
+                    "You tap into your inner reserves of stamina, healing yourself in the process."
+                ],
+                "attack_misses": ["N/A"],
+                "effects": [
+                    {"type": "heal",
+                     "value": "1d10",
+                     "target": "ally"
+                    }
+                ]
+            },
+            {
+                "name": "Power Strike",
+                "description": "3 times per rest, you can make a powerful strike that deals 2d6 damage plus your strength modifier.",
+                "uses_per_rest": 2,
+                "modifier_stat": "strength",
+                "attack_descs": [
+                    "You gather your might and unleash a devastating blow on (t)",
+                    "You channel your strength into a powerful strike against (t)",
+                    "You swing with all your might, aiming to shatter (t)"
+                ],
+                "attack_misses": [
+                    "You swing with all your might, but (t) dodges out of the way.",
+                    "You channel your strength into a powerful strike, but (t) manages to block it.",
+                    "You gather your might and unleash a devastating blow, but (t) evades it."
+                ],
+                "effects": [
+                    {"type": "damage",
+                     "value": "2d6",
+                     "target": "enemy"
+                    }
+                ]
+            }
+        ],
+        "base_ac": 13,
+        "spell_slots": {}
+    },
+    {
+        "name": "Wizard",
+        "description": "A scholarly spellcaster who wields powerful arcane magic. Wizards are fragile but have immense destructive and utility potential through spells.",
+        "hit_die": 6,
+        "weapons": {
+            "quarterstaff": {"attack_string": "1d6", "weapon_verb": ["strike", "bash", "thrust"]},
+            "dagger": {"attack_string": "1d4", "weapon_verb": ["stab", "slash", "throw"]}
+        },
+        "stat_modifiers": {
+            "strength": 0,
+            "dex": 1,
+            "con": 0,
+            "intel": 2,
+            "wis": 0,
+            "ris": 0
+        },
+        "base_ac": 11,
+        "abilities": [
+            {
+                "name": "Fire Bolt",
+                "description": "Hurl a mote of fire at a creature or object.",
+                "uses_per_rest": 0,
+                "modifier_stat": "intel",
+                "attack_descs": [
+                    "You point your finger and a mote of fire streaks toward (t).",
+                    "A small bolt of fire leaps from your hand toward (t).",
+                    "You conjure a fiery projectile and launch it at (t)."
+                ],
+                "attack_misses": [
+                    "The fire bolt sails past (t).",
+                    "(t) dodges the incoming fire bolt."
+                ],
+                "effects": [
+                    {
+                        "type": "spell_damage",
+                        "value": "1d10",
+                        "target": "enemy",
+                        "spell_slot_level": 0
+                    }
+                ]
+            },
+            {
+                "name": "Ray of Frost",
+                "description": "A beam of cold energy strikes a creature, slowing it.",
+                "uses_per_rest": 0,
+                "modifier_stat": "intel",
+                "attack_descs": [
+                    "A frigid beam of blue-white light streaks toward (t).",
+                    "You fire a ray of frost at (t)."
+                ],
+                "attack_misses": [
+                    "The ray of frost misses (t)."
+                ],
+                "effects": [
+                    {
+                        "type": "spell_damage",
+                        "value": "1d8",
+                        "target": "enemy",
+                        "spell_slot_level": 0
+                    },
+                    {
+                        "type": "debuff",
+                        "stat": "dex",
+                        "value": 2,
+                        "duration": 1,
+                        "target": "enemy"
+                    }
+                ]
+            },
+            {
+                "name": "Acid Splash",
+                "description": "Hurl a bubble of acid at a creature.",
+                "uses_per_rest": 0,
+                "modifier_stat": "intel",
+                "attack_descs": [
+                    "You conjure a sizzling bubble of acid and hurl it at (t).",
+                    "A splash of corrosive acid flies toward (t)."
+                ],
+                "attack_misses": [
+                    "The acid splash misses (t).",
+                    "(t) dodges the corrosive bubble."
+                ],
+                "effects": [
+                    {
+                        "type": "spell_damage",
+                        "value": "1d6",
+                        "target": "enemy",
+                        "spell_slot_level": 0
+                    },
+                    {
+                        "type": "debuff",
+                        "stat": "strength",
+                        "value": 3,
+                        "duration": 1,
+                        "target": "enemy"
+                    }
+                ]
+            },
+            {
+                "name": "Chromatic Orb",
+                "description": "You hurl an orb of energy that deals damage of a type you choose.",
+                "uses_per_rest": 0,
+                "modifier_stat": "intel",
+                "attack_descs": [
+                    "You conjure a swirling orb of multicolored energy and hurl it at (t).",
+                    "A vibrant orb of magical force streaks toward (t)."
+                ],
+                "attack_misses": [
+                    "The chromatic orb misses (t).",
+                    "(t) dodges the swirling orb of energy."
+                ],
+                "effects": [
+                    {
+                        "type": "spell_damage",
+                        "value": "3d8",
+                        "target": "enemy",
+                        "spell_slot_level": 1
+                    }
+                ]
+            },
+            {
+                "name": "Mage Armor",
+                "description": "You surround yourself with a protective magical force.",
+                "uses_per_rest": 0,
+                "modifier_stat": "intel",
+                "attack_descs": [
+                    "You weave threads of magic around your body, creating a protective barrier."
+                ],
+                "attack_misses": ["N/A"],
+                "effects": [
+                    {
+                        "type": "spell_buff",
+                        "stat": "ac",
+                        "value": 3,
+                        "duration": 10,
+                        "target": "ally",
+                        "spell_slot_level": 1
+                    }
+                ]
+            }
+        ],
+        "spell_slots": {"1": 2}
+    },
+    {
+        "name": "Runeblade",
+        "description": "A warrior combining arcane magic with martial prowess. Based losely on Flesh and Blood's Runeblade class. High strength and intelligence, with a focus on powerful weapon attacks and rune magic.",
+        "hit_die": 8,
+        "weapons": {
+            "longsword": {"attack_string": "1d10", "weapon_verb": ["swing", "thrust", "pierce", "slash"]},
+            "glaive": {"attack_string": "1d10", "weapon_verb": ["swing", "thrust", "pierce", "slash"]}
+        },
+        "stat_modifiers": {
+            "strength": 1,
+            "dex": 0,
+            "con": 1,
+            "intel": 1,
+            "wis": 0,
+            "ris": 0
+        },
+        "abilities": [
+            {
+                "name": "Arcanic Crackle",
+                "description": "You can imbue your weapon with arcane energy, dealing 1d6 damage plus intelligence modifier",
+                "uses_per_rest": 0,
+                "modifier_stat": "intel",
+                "attack_descs": [
+                    "You channel arcane energy into your weapon, causing it to crackle with power as you strike (t).",
+                    "Your weapon hums with arcane energy as you unleash a powerful attack against (t)."
+                ],
+                "attack_misses": [
+                    "You attempt to channel arcane energy into your weapon, but (t) dodges your strike.",
+                    "Your weapon hums with arcane energy, but (t) manages to block your attack."
+                ],
+                "effects": [
+                    {
+                        "type": "spell_damage",
+                        "value": "1d6",
+                        "target": "enemy",
+                        "spell_slot_level": 0
+                    }
+                ]
+            },
+            {
+                "name": "Douse in Runeblood",
+                "description": "The blood around you hums with power, granting a boost to your strength and intelligence for 3 turns.",
+                "uses_per_rest": 1,
+                "modifier_stat": "intel",
+                "attack_descs": [
+                    "Dousing your weapon in blood, you sketch a rune, empowering it with arcane energy. You feel a surge of power course through you as the rune takes effect."
+                ],
+                "attack_misses": ["N/A"],  
+                "effects": [
+                    {
+                        "type": "spell_buff",
+                        "stat": "strength",
+                        "value": 1,
+                        "duration": 3,
+                        "target": "self",
+                        "spell_slot_level": 0
+                    },
+                    {
+                        "type": "spell_buff",
+                        "stat": "intel",
+                        "value": 1,
+                        "duration": 3,
+                        "target": "self",
+                        "spell_slot_level": 0
+                    }
+                ]
+            },
+            {
+                "name": "Runechant",
+                "description": "Chanting, you release a surge of magical energy at your enemy, dealing 1d12 damage modified by intelligence.",
+                "uses_per_rest": 0,
+                "modifier_stat": "intel",
+                "attack_descs": [
+                    "You chant an ancient incantation, releasing a surge of magical energy that strikes (t) with devastating force.",
+                    "With a powerful chant, you unleash a wave of arcane energy that crashes into (t), dealing significant damage."
+                ],
+                "attack_misses": [
+                    "You chant an ancient incantation, but (t) manages to evade the surge of magical energy.",
+                    "With a powerful chant, you unleash a wave of arcane energy, but (t) dodges out of the way."
+                ],
+                "effects": [
+                    {
+                        "type": "spell_damage",
+                        "value": "1d12",
+                        "target": "enemy",
+                        "spell_slot_level": 1
+                    }
+                ]
+            },
+            {
+                "name": "Runic Reclamation",
+                "description": "Striking your opponent, you can reclaim some runic energy from your target, sapping their strength and dexterity",
+                "uses_per_rest": 0,
+                "modifier_stat": "strength",
+                "attack_descs": [
+                    "You strike (t) with a powerful blow, siphoning off some of their strength and dexterity as you do."
+                ],
+                "attack_misses": [
+                    "You attempt to strike (t) and siphon off their strength and dexterity, but they manage to evade your attack."
+                ],
+                "effects": [
+                    {
+                        "type": "spell_debuff",
+                        "stat": "strength",
+                        "value": 2,
+                        "duration": 2,
+                        "spell_slot_level": 1,
+                        "target": "enemy"
+                    },
+                    {
+                        "type": "spell_debuff",
+                        "stat": "dexterity",
+                        "value": 2,
+                        "duration": 2,
+                        "spell_slot_level": 0,
+                        "target": "enemy"
+                    },
+                    {
+                        "type": "spell_damage",
+                        "value": "1d12",
+                        "target": "enemy",
+                        "spell_slot_level": 0
+                    }
+                ]
+            }
+        ],
+        "base_ac": 12,
+        "spell_slots": {"1": 2}
+    }
+]
