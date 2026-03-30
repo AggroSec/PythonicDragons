@@ -52,9 +52,11 @@ def run_combat(player, enemies=[]):
         time.sleep(0.5)
         current_round += 1
     if player.current_hp > 0:
-        log_event("You won the combat! Congrats!") #placeholder till we get to scene movement
+        player.buffs = []
+        player.debuffs = []
+        return True
     else:
-        log_event("You failed, the enemies have utterly destroyed you.") #also a placeholder
+        return False
 
 def player_info_prompt(player):
     buffs = ""

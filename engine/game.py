@@ -8,11 +8,62 @@ import json
 import time
 
 def start_game():
-    player = character_creation()
-    testgob = EnemyNPC(1, 50, 10, 10, 10, 10, 10, 10, 10, "Bob the test gob", "1d6", 0)
-    run_combat(player, [testgob])
+    player, class_info = character_creation()
+    story = get_story_selection()
+    game_finished = False
+    current_scene = story['start_scene']
+    while not game_finished:
+        current_scene, game_finished = handle_scenes(player, story, current_scene, class_info)
 
-
+def handle_scenes(player, story, current_scene, class_info):
+    scene_data = story['scenes'][current_scene]
+    if scene_data["game_finished"] == True:
+        log_game_event(scene_data["text"])
+        return current_scene, True
+    elif scene_data["combat"] == True:
+        log_game_event(scene_data["text"])
+        enemies_list = load_json_data("data/enemies.json")
+        combat_enemies = []
+        for enemy_name in scene_data["combat_info"]["enemies"]:
+            for enemy in enemies_list:
+                if enemy["name"] == enemy_name:
+                    created_enemy = EnemyNPC(
+                        1, 
+                        enemy["hp"], 
+                        enemy["constitution"], 
+                        enemy["strength"], 
+                        enemy["dexterity"], 
+                        enemy["intelligence"], 
+                        enemy["wisdom"], 
+                        enemy["ris"], 
+                        enemy["ac"], 
+                        enemy["name"], 
+                        enemy["basic_attack"]["value"], 
+                        enemy["ability_probability"], 
+                        enemy["basic_attack"]["name"], 
+                        enemy["basic_attack"]["verb"]
+                    )
+                    for ability in enemy.get("abilities", []):
+                        created_enemy.add_ability(ability)
+                    combat_enemies.append(created_enemy)
+        combat_success = run_combat(player, combat_enemies)
+        if combat_success:
+            log_game_event("You have survived to see another day...")
+            return scene_data["combat_info"]["win"], False
+        else:
+            log_game_event("You have been defeated...")
+            return scene_data["combat_info"]["lose"], False
+    elif scene_data["rest"] == True:
+        player.spell_slots = class_info["spell_slots"]
+        player.current_hp = player.max_hp
+        player.rest_usage = {}
+        next_scene = present_scene(scene_data, player)
+        log_game_event("You have rested and recovered your health and spell slots.")
+        return next_scene, False
+    else:
+        next_scene = present_scene(scene_data, player)
+        return next_scene, False
+        
 
 def character_creation():
     while True:
@@ -26,11 +77,11 @@ def character_creation():
         if finished:
             log_game_event("Character creation complete! Starting game...")
             created_character = initialize_character(name, player_class, stats, weapon_info)
-            time.sleep(2)
-            return created_character
+            time.sleep(1)
+            return created_character, player_class
         else:
             log_game_event("Reallocating stats. Returning to stat allocation screen...")
-            time.sleep(2)
+            time.sleep(1)
     
     
 
@@ -372,6 +423,49 @@ def initialize_character(name, player_class, stats, weapon_info):
     for ability in player_class.get('abilities', []):
         character.add_ability(ability)
     return character
+
+def get_story_selection():
+    """
+    Scans the stories/ folder and returns a list of story names (folder names)
+    and their full paths to story.json
+    """
+    stories_dir = Path("stories")
+    
+    if not stories_dir.exists():
+        raise FileNotFoundError(f"Stories directory not found: {stories_dir}")
+    
+    story_list = []
+    
+    # Iterate through each subfolder in stories/
+    for story_folder in stories_dir.iterdir():
+        if story_folder.is_dir():
+            story_file = story_folder / "story.json"
+            if story_file.exists():
+                story_list.append({
+                    "name": story_folder.name,           # e.g. "default", "lost_caravan"
+                    "path": str(story_file),             # full relative path
+                    "display_name": story_folder.name.replace("_", " ").title()
+                })
+    
+    # Sort alphabetically for nice display
+    story_list.sort(key=lambda x: x["display_name"])
+    log_game_event("Available Stories:")
+    for index, story in enumerate(story_list, 1):
+        log_game_event(f"{index}. {story['display_name']} - {story['path']}")
+    player_input = generic_get_input("Enter the number corresponding to the story you want to play: ").strip()
+    while True:
+        if not player_input.isdigit():
+            log_game_event("Invalid input, please enter a number.")
+            player_input = generic_get_input("Enter the number corresponding to the story you want to play: ").strip()
+            continue
+        story_index = int(player_input) - 1
+        if story_index < 0 or story_index >= len(story_list):
+            log_game_event("Invalid selection, try again.")
+            player_input = generic_get_input("Enter the number corresponding to the story you want to play: ").strip()
+            continue
+        chosen_story_path = story_list[story_index]["path"]
+        log_game_event(f"You have selected: {story_list[story_index]['display_name']}")
+        return load_json_data(chosen_story_path)
 
 def log_game_event(text):
     print(text)

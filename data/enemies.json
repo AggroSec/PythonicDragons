@@ -1,0 +1,169 @@
+[
+  {
+    "name": "Goblin Scout",
+    "description": "A sneaky goblin with a bow",
+    "hp": 7,
+    "strength": 8,
+    "dexterity": 14,
+    "constitution": 10,
+    "intelligence": 10,
+    "wisdom": 8,
+    "ris": 8,
+    "ac": 13,
+    "basic_attack": {
+      "name": "shortbow",
+      "type": "damage",
+      "value": "1d6",
+      "verb": ["shoots", "fires"]
+    },
+    "abilities": [],
+    "ability_probability": 0,
+    "comment": "Low-level trash mob. Uses shortbow for ranged attacks."
+  },
+  {
+    "name": "Goblin Chieftain",
+    "description": "A larger, meaner goblin that leads small raids",
+    "hp": 14,
+    "strength": 13,
+    "dexterity": 12,
+    "constitution": 12,
+    "intelligence": 8,
+    "wisdom": 9,
+    "ris": 8,
+    "ac": 14,
+    "basic_attack": {
+      "name": "rusty axe",
+      "type": "damage",
+      "value": "1d8",
+      "verb": ["swings", "slashes", "chops"]
+    },
+    "abilities": [
+      {
+        "name": "Bloodlust",
+        "description": "The chieftain rages, increasing his attack damage.",
+        "uses_per_rest": 0,
+        "modifier_stat": "strength",
+        "attack_descs": [
+          "The Goblin Chieftain lets out a fierce war cry!"
+        ],
+        "attack_misses": ["N/A"],
+        "effects": [
+          {
+            "type": "buff",
+            "stat": "strength",
+            "value": 2,
+            "duration": 2,
+            "target": "ally",
+            "spell_slot_level": 0
+          }
+        ]
+      }
+    ],
+    "ability_probability": 30,
+    "comment": "Mini-boss style goblin. Has one buff ability."
+  },
+  {
+    "name": "Orc Warrior",
+    "description": "A brutish orc fighter",
+    "hp": 18,
+    "strength": 16,
+    "dexterity": 10,
+    "constitution": 14,
+    "intelligence": 7,
+    "wisdom": 8,
+    "ris": 8,
+    "ac": 15,
+    "basic_attack": {
+      "name": "greataxe",
+      "type": "damage",
+      "value": "1d12",
+      "verb": ["swings", "cleaves", "slashes"]
+    },
+    "abilities": [],
+    "ability_probability": 0,
+    "comment": "Tough melee enemy. High strength and damage."
+  },
+  {
+    "name": "Bandit Leader",
+    "description": "The cunning leader of the bandit camp",
+    "hp": 25,
+    "strength": 14,
+    "dexterity": 15,
+    "constitution": 13,
+    "intelligence": 12,
+    "wisdom": 10,
+    "ris": 11,
+    "ac": 16,
+    "basic_attack": {
+      "name": "rapier",
+      "type": "damage",
+      "value": "1d8",
+      "verb": ["thrusts", "slashes", "stabs"]
+    },
+    "abilities": [
+      {
+        "name": "Dirty Trick",
+        "description": "The bandit leader uses a cheap tactic to trip or distract you.",
+        "uses_per_rest": 0,
+        "modifier_stat": "dexterity",
+        "attack_descs": [
+          "The Bandit Leader attempts a dirty trick!"
+        ],
+        "attack_misses": ["N/A"],
+        "effects": [
+          {
+            "type": "debuff",
+            "stat": "dex",
+            "value": 3,
+            "duration": 2,
+            "target": "enemy",
+            "spell_slot_level": 0
+          }
+        ]
+      },
+      {
+        "name": "Vicious Strike",
+        "description": "The leader makes a particularly ruthless attack.",
+        "uses_per_rest": 0,
+        "modifier_stat": "strength",
+        "attack_descs": [
+          "The Bandit Leader lunges with a vicious strike!"
+        ],
+        "attack_misses": [
+          "The Bandit Leader's vicious strike misses you."
+        ],
+        "effects": [
+          {
+            "type": "spell_damage",
+            "value": "2d6",
+            "target": "enemy",
+            "spell_slot_level": 0
+          }
+        ]
+      }
+    ],
+    "ability_probability": 40,
+    "comment": "Final boss for the test story. Has two tactical abilities."
+  },
+  {
+    "name": "Wolf",
+    "description": "A hungry forest wolf",
+    "hp": 11,
+    "strength": 12,
+    "dexterity": 14,
+    "constitution": 12,
+    "intelligence": 3,
+    "wisdom": 12,
+    "ris": 5,
+    "ac": 13,
+    "basic_attack": {
+      "name": "bite",
+      "type": "damage",
+      "value": "1d6",
+      "verb": ["bites", "lunges", "snaps"]
+    },
+    "abilities": [],
+    "ability_probability": 0,
+    "comment": "Common wilderness encounter."
+  }
+]

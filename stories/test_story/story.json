@@ -7,6 +7,7 @@
       "combat": false,
       "rest": false,
       "check": false,
+      "game_finished": false,
       "choices": [
         {
           "text": "Talk to the scout for information",
@@ -28,6 +29,7 @@
       "combat": false,
       "rest": false,
       "check": false,
+      "game_finished": false,
       "choices": [
         {
           "text": "Take the safer path (easier battle)",
@@ -45,6 +47,7 @@
       "combat": false,
       "rest": false,
       "check": true,
+      "game_finished": false,
       "check_info": {
         "type": "skill",
         "stat": "dex",
@@ -62,6 +65,7 @@
       "combat": false,
       "rest": false,
       "check": false,
+      "game_finished": false,
       "choices": [
         {
           "text": "Continue toward the ruins",
@@ -75,8 +79,9 @@
       "combat": true,
       "rest": false,
       "check": false,
+      "game_finished": false,
       "combat_info": {
-        "enemies": ["orc_warrior", "goblin_chieftain"],
+        "enemies": ["Wolf", "Goblin Chieftain"],
         "win": "post_first_battle",
         "lose": "game_over"
       },
@@ -88,8 +93,9 @@
       "combat": true,
       "rest": false,
       "check": false,
+      "game_finished": false,
       "combat_info": {
-        "enemies": ["goblin_scout", "goblin_scout"],
+        "enemies": ["Goblin Scout", "Orc Warrior"],
         "win": "post_first_battle",
         "lose": "game_over"
       },
@@ -101,6 +107,7 @@
       "combat": false,
       "rest": false,
       "check": false,
+      "game_finished": false,
       "choices": [
         {
           "text": "Press on to face the boss",
@@ -118,6 +125,7 @@
       "combat": false,
       "rest": true,
       "check": false,
+      "game_finished": false,
       "choices": [
         {
           "text": "Continue to the boss camp",
@@ -131,8 +139,9 @@
       "combat": true,
       "rest": false,
       "check": false,
+      "game_finished": false,
       "combat_info": {
-        "enemies": ["bandit_leader"],
+        "enemies": ["Bandit Leader"],
         "win": "victory",
         "lose": "game_over"
       },
@@ -144,6 +153,7 @@
       "combat": false,
       "rest": false,
       "check": false,
+      "game_finished": false,
       "choices": [
         {
           "text": "Return home",
@@ -157,7 +167,7 @@
       "combat": false,
       "rest": false,
       "check": false,
-      "end": "game_over"
+      "game_finished": true
     },
 
     "end_credits": {
@@ -165,6 +175,7 @@
       "combat": false,
       "rest": false,
       "check": false,
+      "game_finished": true,
       "choices": []
     }
   }
