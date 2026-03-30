@@ -9,13 +9,29 @@ import time
 
 def start_game():
     player = character_creation()
+    testgob = EnemyNPC(1, 50, 10, 10, 10, 10, 10, 10, 10, "Bob the test gob", "1d6", 0)
+    run_combat(player, [testgob])
 
 
 
 def character_creation():
-    name = get_name()
-    player_class = get_class()
-    log_game_event(f"Welcome, {name} the {player_class['name']}! Your adventure begins now.")
+    while True:
+        name = get_name()
+        player_class = get_class()
+        log_game_event(f"Welcome, {name} the {player_class['name']}! Your adventure begins begins shortly.")
+        weapon_info = get_weapon_selection(player_class)
+        stats = get_stat_allocation()
+        display_character_sheet(name, player_class, stats, weapon_info)
+        finished = get_confirmation()
+        if finished:
+            log_game_event("Character creation complete! Starting game...")
+            created_character = initialize_character(name, player_class, stats, weapon_info)
+            time.sleep(2)
+            return created_character
+        else:
+            log_game_event("Reallocating stats. Returning to stat allocation screen...")
+            time.sleep(2)
+    
     
 
 def load_json_data(file_path: str):
@@ -75,6 +91,33 @@ def get_class():
             continue
         return selectable_classes[class_index]
     
+def get_weapon_selection(player_class):
+    weapon_options = player_class.get('weapons', [])
+    if not weapon_options:
+        log_game_event("No starting weapons available for this class.")
+        return None
+    log_game_event("Select your starting weapon:")
+    table = []
+    for i, weapon in enumerate(weapon_options, 1):
+        table.append([
+            i,
+            weapon["name"].capitalize(),
+            weapon["attack_string"]
+        ])
+    
+    log_game_event(tabulate(table, headers=["#", "Weapon", "Damage"], tablefmt="grid"))
+    log_game_event("")
+    while True:
+        weapon_input = generic_get_input("Enter the number corresponding to your chosen weapon: ").strip()
+        if not weapon_input.isdigit():
+            log_game_event("Invalid input, please enter a number.")
+            continue
+        weapon_index = int(weapon_input) - 1
+        if weapon_index < 0 or weapon_index >= len(weapon_options):
+            log_game_event("Invalid selection, try again.")
+            continue
+        return weapon_options[weapon_index]
+    
 def show_class_info(class_info):
     """Display detailed information about a class using tabulate and log_game_event"""
     
@@ -109,6 +152,226 @@ def show_class_info(class_info):
         log_game_event(abilities_table)
     
     log_game_event("")
+
+def get_stat_allocation():
+    strength = 8
+    constitution = 8
+    dexterity = 8
+    intelligence = 8
+    wisdom = 8
+    charisma = 8
+    points = 27
+    stat_cost_dict = {
+        8: 0,
+        9: 1,
+        10: 2,
+        11: 3,
+        12: 4,
+        13: 5,
+        14: 7,
+        15: 9
+    }
+    log_game_event("You have 27 points to allocate to your stats. Each stat starts at 8 and can be increased up to 15. The cost to increase stats is as follows:")
+    show_cost()
+    while points > 0:
+        log_game_event(f"You have {points} points remaining.")
+        show_stat_allocation(strength, constitution, dexterity, intelligence, wisdom, charisma)
+        log_game_event("To allocate points, enter the stat name followed by the desired value (e.g. 'strength 14').")
+        log_game_event("It is recommended to allocate points in order of importance for your chosen class. When you are finished allocating points, enter 'done'.")
+        stat_input = generic_get_input("Enter the stat you want to increase (or 'done' to finish): ").strip().lower()
+        if stat_input == "done":
+            break
+        split_input = stat_input.split(" ")
+        if len(split_input) != 2 or not split_input[1].isdigit():
+            log_game_event("Invalid input format, try again.")
+            continue
+        stat_name = split_input[0]
+        stat_assignment = int(split_input[1])
+        log_game_event(f"Attempting to assign {stat_assignment} to {stat_name}.")
+        if stat_assignment < 8 or stat_assignment > 15:
+            log_game_event("Stat value must be between 8 and 15, try again.")
+            continue
+        if stat_name == "strength":
+            if strength > 8:
+                log_game_event("Stat has already been assigned, try again.")
+                continue
+            else:
+                cost = stat_cost_dict[stat_assignment]
+                if cost > points:
+                    log_game_event("Not enough points for that assignment, try again.")
+                    continue
+                strength = stat_assignment
+                points -= cost
+        elif stat_name == "constitution":
+            if constitution > 8:
+                log_game_event("Stat has already been assigned, try again.")
+                continue
+            else:
+                cost = stat_cost_dict[stat_assignment]
+                if cost > points:
+                    log_game_event("Not enough points for that assignment, try again.")
+                    continue
+                constitution = stat_assignment
+                points -= cost
+        elif stat_name == "dexterity":
+            if dexterity > 8:
+                log_game_event("Stat has already been assigned, try again.")
+                continue
+            else:
+                cost = stat_cost_dict[stat_assignment]
+                if cost > points:
+                    log_game_event("Not enough points for that assignment, try again.")
+                    continue
+                dexterity = stat_assignment
+                points -= cost
+        elif stat_name == "intelligence":
+            if intelligence > 8:
+                log_game_event("Stat has already been assigned, try again.")
+                continue
+            else:
+                cost = stat_cost_dict[stat_assignment]
+                if cost > points:
+                    log_game_event("Not enough points for that assignment, try again.")
+                    continue
+                intelligence = stat_assignment
+                points -= cost
+        elif stat_name == "wisdom":
+            if wisdom > 8:
+                log_game_event("Stat has already been assigned, try again.")
+                continue
+            else:
+                cost = stat_cost_dict[stat_assignment]
+                if cost > points:
+                    log_game_event("Not enough points for that assignment, try again.")
+                    continue
+                wisdom = stat_assignment
+                points -= cost
+        elif stat_name == "charisma":
+            if charisma > 8:
+                log_game_event("Stat has already been assigned, try again.")
+                continue
+            else:
+                cost = stat_cost_dict[stat_assignment]
+                if cost > points:
+                    log_game_event("Not enough points for that assignment, try again.")
+                    continue
+                charisma = stat_assignment
+                points -= cost
+        else:
+            log_game_event("Invalid stat name, try again.")
+            continue
+    return {"strength": strength, "con": constitution, "dex": dexterity, "intel": intelligence, "wis": wisdom, "ris": charisma}
+
+def show_cost():
+    cost_table = [
+        [8, 0],
+        [9, 1],
+        [10, 2],
+        [11, 3],
+        [12, 4],
+        [13, 5],
+        [14, 7],
+        [15, 9]
+    ]
+    display_table = tabulate(cost_table, headers=["Stat Value", "Cost"], tablefmt="grid")
+    log_game_event(display_table)
+    
+def show_stat_allocation(strength, constitution, dexterity, intelligence, wisdom, charisma):
+    stat_table = [
+        ["Strength", strength],
+        ["Constitution", constitution],
+        ["Dexterity", dexterity],
+        ["Intelligence", intelligence],
+        ["Wisdom", wisdom],
+        ["Charisma", charisma]
+    ]
+    display_table = tabulate(stat_table, headers=["Stat", "Value"], tablefmt="grid")
+    log_game_event(display_table)
+
+def display_character_sheet(name, player_class, stats, weapon_info):
+    log_game_event(f"\n=== Character Sheet for {name} the {player_class['name']} ===\n")
+    log_game_event(f"Class: {player_class['name']}")
+    log_game_event(f"Description: {player_class['description']}")
+    log_game_event("-" * 50)
+
+    dex_mod = calculate_dex_mod(stats, player_class)
+
+    # Basic Stats Table
+    stats_data = [
+        ["Hit Die", f"d{player_class['hit_die']}"],
+        ["Base AC (plus dex modifier)", f"{player_class.get('base_ac', 'N/A')}+{dex_mod}"],
+        ["Strength", f"{stats['strength']}+{player_class['stat_modifiers'].get('strength', 0)}"],
+        ["Dexterity", f"{stats['dex']}+{player_class['stat_modifiers'].get('dex', 0)}"],
+        ["Constitution", f"{stats['con']}+{player_class['stat_modifiers'].get('con', 0)}"],
+        ["Intelligence", f"{stats['intel']}+{player_class['stat_modifiers'].get('intel', 0)}"],
+        ["Wisdom", f"{stats['wis']}+{player_class['stat_modifiers'].get('wis', 0)}"],
+        ["Charisma", f"{stats['ris']}+{player_class['stat_modifiers'].get('ris', 0)}"]
+    ]
+
+    stats_table = tabulate(stats_data, headers=["Stat", "Value"], tablefmt="grid")
+    log_game_event(stats_table)
+    log_game_event("")
+    log_game_event(f"Selected Weapon: {weapon_info['name'].capitalize()} (Damage: {weapon_info['attack_string']})")
+    log_game_event("")
+
+     # Abilities List
+    if player_class.get('abilities'):
+        log_game_event("Abilities:")
+        ability_list = []
+        for ability in player_class['abilities']:
+            ability_list.append([ability['name'], ability.get('description', '')])
+        
+        abilities_table = tabulate(ability_list, headers=["Ability", "Description"], tablefmt="grid")
+        log_game_event(abilities_table)
+    log_game_event("")
+
+def calculate_dex_mod(stats, player_class):
+    base_dex = stats['dex']
+    class_dex_mod = player_class['stat_modifiers'].get('dex', 0)
+    total_dex = base_dex + class_dex_mod
+    dex_mod = (total_dex - 10) // 2
+    return dex_mod
+
+def get_confirmation():
+    log_game_event("Are you satisfied with your character sheet? (yes/no)")
+    while True:
+        confirmation_input = generic_get_input("Enter 'yes' to confirm or 'no' to reallocate stats: ").strip().lower()
+        if confirmation_input == "yes":
+            return True
+        elif confirmation_input == "no":
+            return False
+        else:
+            log_game_event("Invalid input, please enter 'yes' or 'no'.")
+
+def initialize_character(name, player_class, stats, weapon_info):
+    hit_die = player_class['hit_die']
+    base_ac = player_class.get('base_ac', 10) + calculate_dex_mod(stats, player_class)
+    strength = stats['strength'] + player_class['stat_modifiers'].get('strength', 0)
+    dexterity = stats['dex'] + player_class['stat_modifiers'].get('dex', 0)
+    constitution = stats['con'] + player_class['stat_modifiers'].get('con', 0)
+    intelligence = stats['intel'] + player_class['stat_modifiers'].get('intel', 0)
+    wisdom = stats['wis'] + player_class['stat_modifiers'].get('wis', 0)
+    charisma = stats['ris'] + player_class['stat_modifiers'].get('ris', 0)
+    abilities = player_class.get('abilities', [])
+    character = Player(
+        1, 
+        hit_die, 
+        constitution, 
+        strength, 
+        dexterity,
+        intelligence,
+        wisdom,
+        charisma,
+        base_ac,
+        name,
+        weapon_info["attack_string"],
+        player_class["spell_slots"],
+        weapon_info["name"],
+        weapon_info["weapon_verb"]
+        )
+    for ability in player_class.get('abilities', []):
+        character.add_ability(ability)
+    return character
 
 def log_game_event(text):
     print(text)

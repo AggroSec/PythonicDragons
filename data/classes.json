@@ -3,12 +3,12 @@
         "name": "Fighter",
         "description": "A master of martial arts, skilled with a variety of weapons and armor. High constitution and strength, with a focus on physical combat. Starts with a 1 handed weapon and shield.",
         "hit_die": 10,
-        "weapons": {
-            "battleaxe": {"attack_string": "1d8", "weapon_verb": ["swing", "slash", "chop", "cleave"]},
-            "longsword": {"attack_string": "1d8", "weapon_verb": ["swing", "thrust", "pierce", "slash"]},
-            "rapier": {"attack_string": "1d8", "weapon_verb": ["thrust", "pierce", "stab", "lunge"]},
-            "morningstar": {"attack_string": "1d8", "weapon_verb": ["swing", "bash", "crush", "smash"]}
-        },
+        "weapons": [
+            {"name": "battleaxe", "attack_string": "1d8", "weapon_verb": ["swing", "slash", "chop", "cleave"]},
+            {"name": "longsword", "attack_string": "1d8", "weapon_verb": ["swing", "thrust", "pierce", "slash"]},
+            {"name": "rapier", "attack_string": "1d8", "weapon_verb": ["thrust", "pierce", "stab", "lunge"]},
+            {"name": "morningstar", "attack_string": "1d8", "weapon_verb": ["swing", "bash", "crush", "smash"]}
+        ],
         "stat_modifiers": {
             "strength": 1,
             "dex": 0,
@@ -66,10 +66,10 @@
         "name": "Wizard",
         "description": "A scholarly spellcaster who wields powerful arcane magic. Wizards are fragile but have immense destructive and utility potential through spells.",
         "hit_die": 6,
-        "weapons": {
-            "quarterstaff": {"attack_string": "1d6", "weapon_verb": ["strike", "bash", "thrust"]},
-            "dagger": {"attack_string": "1d4", "weapon_verb": ["stab", "slash", "throw"]}
-        },
+        "weapons": [
+            {"name": "quarterstaff", "attack_string": "1d6", "weapon_verb": ["strike", "bash", "thrust"]},
+            {"name": "dagger", "attack_string": "1d4", "weapon_verb": ["stab", "slash", "throw"]}
+        ],
         "stat_modifiers": {
             "strength": 0,
             "dex": 1,
@@ -209,10 +209,10 @@
         "name": "Runeblade",
         "description": "A warrior combining arcane magic with martial prowess. Based losely on Flesh and Blood's Runeblade class. High strength and intelligence, with a focus on powerful weapon attacks and rune magic.",
         "hit_die": 8,
-        "weapons": {
-            "longsword": {"attack_string": "1d10", "weapon_verb": ["swing", "thrust", "pierce", "slash"]},
-            "glaive": {"attack_string": "1d10", "weapon_verb": ["swing", "thrust", "pierce", "slash"]}
-        },
+        "weapons": [
+            {"name": "longsword", "attack_string": "1d10", "weapon_verb": ["swing", "thrust", "pierce", "slash"]},
+            {"name": "glaive", "attack_string": "1d10", "weapon_verb": ["swing", "thrust", "pierce", "slash"]}
+        ],
         "stat_modifiers": {
             "strength": 1,
             "dex": 0,
@@ -259,7 +259,7 @@
                         "stat": "strength",
                         "value": 1,
                         "duration": 3,
-                        "target": "self",
+                        "target": "ally",
                         "spell_slot_level": 0
                     },
                     {
@@ -267,7 +267,7 @@
                         "stat": "intel",
                         "value": 1,
                         "duration": 3,
-                        "target": "self",
+                        "target": "ally",
                         "spell_slot_level": 0
                     }
                 ]
@@ -316,7 +316,7 @@
                     },
                     {
                         "type": "spell_debuff",
-                        "stat": "dexterity",
+                        "stat": "dex",
                         "value": 2,
                         "duration": 2,
                         "spell_slot_level": 0,
