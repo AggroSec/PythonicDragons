@@ -31,7 +31,7 @@ def run_combat(player, enemies=[]):
                 log_event(turn_break)
                 time.sleep(0.5)
                 handle_player_turn(player, enemies)
-                time.sleep(1.0)
+                time.sleep(2.0)
             else:
                 for enemy in enemies:
                     if name == enemy.name:
@@ -42,14 +42,15 @@ def run_combat(player, enemies=[]):
                         handle_enemy_turn(enemy, player)
                         time.sleep(1.0)
                         status_update(enemy, player)
-                        time.sleep(0.5)
+                        time.sleep(2.0)
         turn_order, game_over = round_clean_up(player, enemies, initiative)
-        player_info_prompt(player)
         time.sleep(1.0)
         log_event(round_break)
         log_event(f"Round {current_round} END")
         log_event(round_break)
         time.sleep(0.5)
+        player_info_prompt(player)
+        time.sleep(2.0)
         current_round += 1
     if player.current_hp > 0:
         player.buffs = []
@@ -71,7 +72,7 @@ def player_info_prompt(player):
         value = debuff["value"]
         duration = debuff["duration_left"]
         debuffs += f">{stat}|V:{value}|D:{duration}<"
-    prompt_string = f"Status(Name: {player.name} | Health: {player.current_hp}/{player.max_hp} | USEAGE: {player.rest_usage} | SPELL SLOTS: {player.spell_slots} | BUFFS: {buffs} | DEBUFFS: {debuffs})"
+    prompt_string = f"Status(Name: {player.name} | Health: {player.current_hp}/{player.max_hp} | USAGE: {player.rest_usage} | SPELL SLOTS: {player.spell_slots} | BUFFS: {buffs} | DEBUFFS: {debuffs})"
     log_event(prompt_string)
 
 def round_clean_up(player, enemies, initiative_dict):
@@ -199,7 +200,7 @@ def enemy_basic_attack(enemy, player):
     else:
         miss_strings = [
             f"{enemy.name} moves to attack you, you dodge to the side, the attack wiffing air.",
-            f"{enemy.name} swings at you, the blow glances off your armor."
+            f"{enemy.name} tries to hit you, the blow glances off your armor."
         ]
         miss_string = random.choice(miss_strings)
         log_event(miss_string)
@@ -334,7 +335,7 @@ def use_ability(ability_user: Character, target: Character, ability_name=""):
             if ability_name == ability["name"]:
                 ability_hit_lines = ability["attack_descs"]
         hit_line = random.choice(ability_hit_lines)
-        hit_line = hit_line.replace("(v)", random.choice(ability_user.weapon_verb)).replace("(a)", ability_user.name).replace("(t)", target.name)
+        hit_line = hit_line.replace("(v)", random.choice(ability_user.weapon_verb)).replace("(a)", ability_user.name).replace("(t)", target.name).replace("(w)", ability_user.weapon)
         damage_art_left = "───═( "
         damage_art_right = " )═───"
         log_event(f"{damage_art_left}{hit_line}{damage_art_right}")

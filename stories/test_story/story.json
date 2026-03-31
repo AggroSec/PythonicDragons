@@ -103,7 +103,7 @@
     },
 
     "post_first_battle": {
-      "text": "You have survived the first encounter. The path ahead leads to the bandit leader's camp. Do you press on immediately or rest first?",
+      "text": "You have survived the first encounter. The path ahead leads to the bandit leader's camp. Do you press on immediately, or take a rest first?",
       "combat": false,
       "rest": false,
       "check": false,

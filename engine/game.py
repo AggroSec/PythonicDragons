@@ -13,15 +13,17 @@ def start_game():
     game_finished = False
     current_scene = story['start_scene']
     while not game_finished:
+        time.sleep(2.0)
         current_scene, game_finished = handle_scenes(player, story, current_scene, class_info)
 
 def handle_scenes(player, story, current_scene, class_info):
     scene_data = story['scenes'][current_scene]
     if scene_data["game_finished"] == True:
-        log_game_event(scene_data["text"])
+        log_story_event(scene_data["text"])
         return current_scene, True
     elif scene_data["combat"] == True:
-        log_game_event(scene_data["text"])
+        log_story_event(scene_data["text"])
+        time.sleep(2.0)
         enemies_list = load_json_data("data/enemies.json")
         combat_enemies = []
         for enemy_name in scene_data["combat_info"]["enemies"]:
@@ -48,17 +50,17 @@ def handle_scenes(player, story, current_scene, class_info):
                     combat_enemies.append(created_enemy)
         combat_success = run_combat(player, combat_enemies)
         if combat_success:
-            log_game_event("You have survived to see another day...")
+            log_story_event("You have survived to see another day...")
             return scene_data["combat_info"]["win"], False
         else:
-            log_game_event("You have been defeated...")
+            log_story_event("You have been defeated...")
             return scene_data["combat_info"]["lose"], False
     elif scene_data["rest"] == True:
-        player.spell_slots = class_info["spell_slots"]
-        player.current_hp = player.max_hp
+        player.restore_spell_slots()
+        player.heal_hp(player.max_hp)
         player.rest_usage = {}
         next_scene = present_scene(scene_data, player)
-        log_game_event("You have rested and recovered your health and spell slots.")
+        log_story_event("You have rested and recovered your health and spell slots.")
         return next_scene, False
     else:
         next_scene = present_scene(scene_data, player)
@@ -69,9 +71,9 @@ def character_creation():
     while True:
         name = get_name()
         player_class = get_class()
-        log_game_event(f"Welcome, {name} the {player_class['name']}! Your adventure begins begins shortly.")
+        log_game_event(f"Welcome, {name} the {player_class['name']}! Your adventure begins shortly.")
         weapon_info = get_weapon_selection(player_class)
-        stats = get_stat_allocation()
+        stats = get_stat_allocation(player_class)
         display_character_sheet(name, player_class, stats, weapon_info)
         finished = get_confirmation()
         if finished:
@@ -204,7 +206,7 @@ def show_class_info(class_info):
     
     log_game_event("")
 
-def get_stat_allocation():
+def get_stat_allocation(player_class):
     strength = 8
     constitution = 8
     dexterity = 8
@@ -226,7 +228,7 @@ def get_stat_allocation():
     show_cost()
     while points > 0:
         log_game_event(f"You have {points} points remaining.")
-        show_stat_allocation(strength, constitution, dexterity, intelligence, wisdom, charisma)
+        show_stat_allocation(strength, constitution, dexterity, intelligence, wisdom, charisma, player_class)
         log_game_event("To allocate points, enter the stat name followed by the desired value (e.g. 'strength 14').")
         log_game_event("It is recommended to allocate points in order of importance for your chosen class. When you are finished allocating points, enter 'done'.")
         stat_input = generic_get_input("Enter the stat you want to increase (or 'done' to finish): ").strip().lower()
@@ -327,16 +329,16 @@ def show_cost():
     display_table = tabulate(cost_table, headers=["Stat Value", "Cost"], tablefmt="grid")
     log_game_event(display_table)
     
-def show_stat_allocation(strength, constitution, dexterity, intelligence, wisdom, charisma):
+def show_stat_allocation(strength, constitution, dexterity, intelligence, wisdom, charisma, player_class):
     stat_table = [
-        ["Strength", strength],
-        ["Constitution", constitution],
-        ["Dexterity", dexterity],
-        ["Intelligence", intelligence],
-        ["Wisdom", wisdom],
-        ["Charisma", charisma]
+        ["Strength", f"{strength} + {player_class['stat_modifiers'].get('strength', 0)}"],
+        ["Dexterity", f"{dexterity} + {player_class['stat_modifiers'].get('dex', 0)}"],
+        ["Constitution", f"{constitution} + {player_class['stat_modifiers'].get('con', 0)}"],
+        ["Intelligence", f"{intelligence} + {player_class['stat_modifiers'].get('intel', 0)}"],
+        ["Wisdom", f"{wisdom} + {player_class['stat_modifiers'].get('wis', 0)}"],
+        ["Charisma", f"{charisma} + {player_class['stat_modifiers'].get('ris', 0)}"]
     ]
-    display_table = tabulate(stat_table, headers=["Stat", "Value"], tablefmt="grid")
+    display_table = tabulate(stat_table, headers=["Stat", "Value (+ Class Modifier)"], tablefmt="grid")
     log_game_event(display_table)
 
 def display_character_sheet(name, player_class, stats, weapon_info):
@@ -350,7 +352,7 @@ def display_character_sheet(name, player_class, stats, weapon_info):
     # Basic Stats Table
     stats_data = [
         ["Hit Die", f"d{player_class['hit_die']}"],
-        ["Base AC (plus dex modifier)", f"{player_class.get('base_ac', 'N/A')}+{dex_mod}"],
+        ["Base AC + Dex Mod", f"{player_class.get('base_ac', 'N/A')}+{dex_mod}"],
         ["Strength", f"{stats['strength']}+{player_class['stat_modifiers'].get('strength', 0)}"],
         ["Dexterity", f"{stats['dex']}+{player_class['stat_modifiers'].get('dex', 0)}"],
         ["Constitution", f"{stats['con']}+{player_class['stat_modifiers'].get('con', 0)}"],
@@ -395,8 +397,9 @@ def get_confirmation():
             log_game_event("Invalid input, please enter 'yes' or 'no'.")
 
 def initialize_character(name, player_class, stats, weapon_info):
+    level = player_class["level"]
     hit_die = player_class['hit_die']
-    base_ac = player_class.get('base_ac', 10) + calculate_dex_mod(stats, player_class)
+    base_ac = player_class.get('base_ac', 10)
     strength = stats['strength'] + player_class['stat_modifiers'].get('strength', 0)
     dexterity = stats['dex'] + player_class['stat_modifiers'].get('dex', 0)
     constitution = stats['con'] + player_class['stat_modifiers'].get('con', 0)
@@ -405,7 +408,7 @@ def initialize_character(name, player_class, stats, weapon_info):
     charisma = stats['ris'] + player_class['stat_modifiers'].get('ris', 0)
     abilities = player_class.get('abilities', [])
     character = Player(
-        1, 
+        level, 
         hit_die, 
         constitution, 
         strength, 
@@ -420,7 +423,7 @@ def initialize_character(name, player_class, stats, weapon_info):
         weapon_info["name"],
         weapon_info["weapon_verb"]
         )
-    for ability in player_class.get('abilities', []):
+    for ability in abilities:
         character.add_ability(ability)
     return character
 

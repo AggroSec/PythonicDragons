@@ -4,12 +4,12 @@
     "description": "A sneaky goblin with a bow",
     "hp": 7,
     "strength": 8,
-    "dexterity": 14,
+    "dexterity": 12,
     "constitution": 10,
     "intelligence": 10,
     "wisdom": 8,
     "ris": 8,
-    "ac": 13,
+    "ac": 10,
     "basic_attack": {
       "name": "shortbow",
       "type": "damage",
@@ -23,14 +23,14 @@
   {
     "name": "Goblin Chieftain",
     "description": "A larger, meaner goblin that leads small raids",
-    "hp": 14,
+    "hp": 16,
     "strength": 13,
     "dexterity": 12,
     "constitution": 12,
     "intelligence": 8,
     "wisdom": 9,
     "ris": 8,
-    "ac": 14,
+    "ac": 10,
     "basic_attack": {
       "name": "rusty axe",
       "type": "damage",
@@ -65,14 +65,14 @@
   {
     "name": "Orc Warrior",
     "description": "A brutish orc fighter",
-    "hp": 18,
-    "strength": 16,
+    "hp": 12,
+    "strength": 14,
     "dexterity": 10,
     "constitution": 14,
     "intelligence": 7,
     "wisdom": 8,
     "ris": 8,
-    "ac": 15,
+    "ac": 10,
     "basic_attack": {
       "name": "greataxe",
       "type": "damage",
@@ -86,14 +86,14 @@
   {
     "name": "Bandit Leader",
     "description": "The cunning leader of the bandit camp",
-    "hp": 25,
+    "hp": 22,
     "strength": 14,
     "dexterity": 15,
     "constitution": 13,
     "intelligence": 12,
     "wisdom": 10,
     "ris": 11,
-    "ac": 16,
+    "ac": 12,
     "basic_attack": {
       "name": "rapier",
       "type": "damage",
@@ -105,16 +105,17 @@
         "name": "Dirty Trick",
         "description": "The bandit leader uses a cheap tactic to trip or distract you.",
         "uses_per_rest": 0,
-        "modifier_stat": "dexterity",
+        "modifier_stat": "dex",
         "attack_descs": [
-          "The Bandit Leader attempts a dirty trick!"
+          "The Bandit Leader attempts a dirty trick! He throws sand in your eyes!",
+          "The Bandit Leader attempts a dirty trick! He tries to trip you with a hidden wire!"
         ],
-        "attack_misses": ["N/A"],
+        "attack_misses": ["The Bandit Leader attempts a dirty trick! You spot it from a mile away and easily avoid it."],
         "effects": [
           {
             "type": "debuff",
             "stat": "dex",
-            "value": 3,
+            "value": 2,
             "duration": 2,
             "target": "enemy",
             "spell_slot_level": 0
@@ -135,7 +136,7 @@
         "effects": [
           {
             "type": "spell_damage",
-            "value": "2d6",
+            "value": "1d10",
             "target": "enemy",
             "spell_slot_level": 0
           }
@@ -148,14 +149,14 @@
   {
     "name": "Wolf",
     "description": "A hungry forest wolf",
-    "hp": 11,
+    "hp": 10,
     "strength": 12,
     "dexterity": 14,
     "constitution": 12,
     "intelligence": 3,
     "wisdom": 12,
     "ris": 5,
-    "ac": 13,
+    "ac": 10,
     "basic_attack": {
       "name": "bite",
       "type": "damage",

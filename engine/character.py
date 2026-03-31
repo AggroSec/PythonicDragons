@@ -51,6 +51,7 @@ class Player(Character):
         self.hit_die = hit_die
         self.name = name
         self.spell_slots = spell_slots
+        self.rest_spell_slots = spell_slots.copy()
         if level > 1:
             total_health = base_hp + (self.current_hp_per_level * (level - 1))
         else:
@@ -60,8 +61,12 @@ class Player(Character):
         self.buffs = []
         self.debuffs = []
         self.rest_usage = {}
+        self.weapon = weapon
         self.weapon_verb = weapon_verb
     
+    def restore_spell_slots(self):
+        self.spell_slots = self.rest_spell_slots.copy()
+
     def update_level_health(self):
         base_hp = self.hit_die + self.get_modifier(self.con)
         self.current_hp_per_level = (self.hit_die // 2) + 1 + self.get_modifier(self.con)
@@ -84,12 +89,12 @@ class Player(Character):
             "uses_per_rest": 0,
             "modifier_stat": "physical",
             "attack_descs": [
-                "You (v) at (t), drawing blood from them.",
-                "You (v) towards (t), scoring a hit."
+                f"You (v) your {weapon} at (t), drawing blood from them.",
+                f"You (v) your {weapon} towards (t), scoring a hit."
             ],
              "attack_misses": [
-                "You swing your weapon at (t), but it glances off of them, doing no damage.",
-                "You move to hit (t), but they dance back, avoiding the blow."
+                f"You (v) your {weapon} at (t), but it glances off of them, doing no damage.",
+                f"You move to hit (t), but they dance back, avoiding the blow."
             ],
             "effects": [
                 {
