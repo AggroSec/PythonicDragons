@@ -158,10 +158,10 @@
     "ris": 5,
     "ac": 10,
     "basic_attack": {
-      "name": "bite",
+      "name": "claws",
       "type": "damage",
       "value": "1d6",
-      "verb": ["bites", "lunges", "snaps"]
+      "verb": ["swipes", "slashes", "lunges"]
     },
     "abilities": [],
     "ability_probability": 0,

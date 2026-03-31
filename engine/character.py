@@ -45,7 +45,7 @@ class Character:
 
 class Player(Character):
 
-    def __init__(self, level, hit_die, con, strength, dex, intel, wis, ris, ac, name, base_attack, spell_slots={}, weapon="dagger", weapon_verb=["stab"]):
+    def __init__(self, level, hit_die, con, strength, dex, intel, wis, ris, ac, name, base_attack, spell_slots, weapon, weapon_verb):
         base_hp = hit_die + self.get_modifier(con)
         self.current_hp_per_level = (hit_die // 2) + 1 + self.get_modifier(con)
         self.hit_die = hit_die
@@ -107,7 +107,7 @@ class Player(Character):
 
 
 class EnemyNPC(Character):
-    def __init__(self, level, max_hp, con, strength, dex, intel, wis, ris, ac, name, base_attack, ability_use_chance, weapon="dagger", weapon_verb=["stabs","slices"]):
+    def __init__(self, level, max_hp, con, strength, dex, intel, wis, ris, ac, name, base_attack, ability_use_chance, weapon, weapon_verb):
         super().__init__(level, max_hp, con, strength, dex, intel, wis, ris, ac, base_attack)
         self.ability_use_chance = ability_use_chance
         self.name = name

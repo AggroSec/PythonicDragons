@@ -1,7 +1,7 @@
-from engine.character import *
-from engine.choice import *
-from engine.dice import *
-from engine.combat import *
+from engine.character import Player, EnemyNPC
+from engine.choice import present_scene, log_story_event_pretty
+from engine.dice import dice_roller
+from engine.combat import run_combat
 from pathlib import Path
 from tabulate import tabulate
 import json
@@ -19,10 +19,10 @@ def start_game():
 def handle_scenes(player, story, current_scene, class_info):
     scene_data = story['scenes'][current_scene]
     if scene_data["game_finished"] == True:
-        log_story_event(scene_data["text"])
+        log_story_event_pretty(scene_data["text"])
         return current_scene, True
     elif scene_data["combat"] == True:
-        log_story_event(scene_data["text"])
+        log_story_event_pretty(scene_data["text"])
         time.sleep(2.0)
         enemies_list = load_json_data("data/enemies.json")
         combat_enemies = []
@@ -50,17 +50,17 @@ def handle_scenes(player, story, current_scene, class_info):
                     combat_enemies.append(created_enemy)
         combat_success = run_combat(player, combat_enemies)
         if combat_success:
-            log_story_event("You have survived to see another day...")
+            log_story_event_pretty("You have survived to see another day...")
             return scene_data["combat_info"]["win"], False
         else:
-            log_story_event("You have been defeated...")
+            log_story_event_pretty("You have been defeated...")
             return scene_data["combat_info"]["lose"], False
     elif scene_data["rest"] == True:
         player.restore_spell_slots()
         player.heal_hp(player.max_hp)
         player.rest_usage = {}
         next_scene = present_scene(scene_data, player)
-        log_story_event("You have rested and recovered your health and spell slots.")
+        log_story_event_pretty("You have rested and recovered your health and spell slots.")
         return next_scene, False
     else:
         next_scene = present_scene(scene_data, player)
@@ -105,7 +105,7 @@ def get_name():
     log_game_event("What name do you wish to be known by?")
     while True:
         name_input = generic_get_input("Enter your name: ").strip()
-        if type(name_input) != str or len(name_input) == 0:
+        if len(name_input) == 0:
             log_game_event("Invalid name, try again.")
         elif len(name_input) > 20:
             log_game_event("Name too long, try again.")
@@ -207,13 +207,16 @@ def show_class_info(class_info):
     log_game_event("")
 
 def get_stat_allocation(player_class):
-    strength = 8
-    constitution = 8
-    dexterity = 8
-    intelligence = 8
-    wisdom = 8
-    charisma = 8
+    stats = {
+        "strength": 8,
+        "constitution": 8,
+        "dexterity": 8,
+        "intelligence": 8,
+        "wisdom": 8,
+        "charisma": 8
+    }
     points = 27
+    
     stat_cost_dict = {
         8: 0,
         9: 1,
@@ -228,7 +231,7 @@ def get_stat_allocation(player_class):
     show_cost()
     while points > 0:
         log_game_event(f"You have {points} points remaining.")
-        show_stat_allocation(strength, constitution, dexterity, intelligence, wisdom, charisma, player_class)
+        show_stat_allocation(stats["strength"], stats["constitution"], stats["dexterity"], stats["intelligence"], stats["wisdom"], stats["charisma"], player_class)
         log_game_event("To allocate points, enter the stat name followed by the desired value (e.g. 'strength 14').")
         log_game_event("It is recommended to allocate points in order of importance for your chosen class. When you are finished allocating points, enter 'done'.")
         stat_input = generic_get_input("Enter the stat you want to increase (or 'done' to finish): ").strip().lower()
@@ -244,76 +247,19 @@ def get_stat_allocation(player_class):
         if stat_assignment < 8 or stat_assignment > 15:
             log_game_event("Stat value must be between 8 and 15, try again.")
             continue
-        if stat_name == "strength":
-            if strength > 8:
-                log_game_event("Stat has already been assigned, try again.")
-                continue
-            else:
-                cost = stat_cost_dict[stat_assignment]
-                if cost > points:
-                    log_game_event("Not enough points for that assignment, try again.")
-                    continue
-                strength = stat_assignment
-                points -= cost
-        elif stat_name == "constitution":
-            if constitution > 8:
-                log_game_event("Stat has already been assigned, try again.")
-                continue
-            else:
-                cost = stat_cost_dict[stat_assignment]
-                if cost > points:
-                    log_game_event("Not enough points for that assignment, try again.")
-                    continue
-                constitution = stat_assignment
-                points -= cost
-        elif stat_name == "dexterity":
-            if dexterity > 8:
-                log_game_event("Stat has already been assigned, try again.")
-                continue
-            else:
-                cost = stat_cost_dict[stat_assignment]
-                if cost > points:
-                    log_game_event("Not enough points for that assignment, try again.")
-                    continue
-                dexterity = stat_assignment
-                points -= cost
-        elif stat_name == "intelligence":
-            if intelligence > 8:
-                log_game_event("Stat has already been assigned, try again.")
-                continue
-            else:
-                cost = stat_cost_dict[stat_assignment]
-                if cost > points:
-                    log_game_event("Not enough points for that assignment, try again.")
-                    continue
-                intelligence = stat_assignment
-                points -= cost
-        elif stat_name == "wisdom":
-            if wisdom > 8:
-                log_game_event("Stat has already been assigned, try again.")
-                continue
-            else:
-                cost = stat_cost_dict[stat_assignment]
-                if cost > points:
-                    log_game_event("Not enough points for that assignment, try again.")
-                    continue
-                wisdom = stat_assignment
-                points -= cost
-        elif stat_name == "charisma":
-            if charisma > 8:
-                log_game_event("Stat has already been assigned, try again.")
-                continue
-            else:
-                cost = stat_cost_dict[stat_assignment]
-                if cost > points:
-                    log_game_event("Not enough points for that assignment, try again.")
-                    continue
-                charisma = stat_assignment
-                points -= cost
-        else:
+        if stat_name not in stats:
             log_game_event("Invalid stat name, try again.")
             continue
-    return {"strength": strength, "con": constitution, "dex": dexterity, "intel": intelligence, "wis": wisdom, "ris": charisma}
+        if stats[stat_name] > 8:
+            log_game_event("Stat has already been assigned, try again.")
+            continue
+        cost = stat_cost_dict[stat_assignment]
+        if cost > points:
+            log_game_event("Not enough points for that assignment, try again.")
+            continue
+        stats[stat_name] = stat_assignment
+        points -= cost
+    return {"strength": stats["strength"], "con": stats["constitution"], "dex": stats["dexterity"], "intel": stats["intelligence"], "wis": stats["wisdom"], "ris": stats["charisma"]}
 
 def show_cost():
     cost_table = [

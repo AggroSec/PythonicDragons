@@ -209,7 +209,7 @@
     },
     {
         "name": "Runeblade",
-        "description": "A warrior combining arcane magic with martial prowess. Based losely on Flesh and Blood's Runeblade class. High strength and intelligence, with a focus on powerful weapon attacks and rune magic.",
+        "description": "A warrior combining arcane magic with martial prowess. Based loosely on Flesh and Blood's Runeblade class. High strength and intelligence, with a focus on powerful weapon attacks and rune magic.",
         "level": 2,
         "hit_die": 8,
         "weapons": [

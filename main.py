@@ -1,8 +1,6 @@
-from engine.character import *
-from engine.dice import *
-from engine.combat import *
-from engine.choice import *
-from engine.game import *
+from engine.game import start_game
+
+
 def main():
     start_game()
 

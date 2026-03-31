@@ -1,5 +1,5 @@
-from engine.dice import *
-from engine.character import *
+from engine.dice import dice_roller
+from engine.character import Player
 import time
 import textwrap
 
@@ -75,6 +75,5 @@ def log_story_event_pretty(text):
 
 def wrap_text(text, width=70):
     """Simple word wrap helper"""
-    import textwrap
     return textwrap.wrap(text, width=width)
 

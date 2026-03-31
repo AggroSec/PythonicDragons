@@ -1,9 +1,9 @@
-from engine.dice import *
-from engine.character import *
+from engine.dice import dice_roller
+from engine.character import Character, Player, EnemyNPC
 from tabulate import tabulate
 import random, uuid, time
 
-def run_combat(player, enemies=[]):
+def run_combat(player, enemies):
     '''
     TLDR: no bonus actions at this point.
 
@@ -184,7 +184,7 @@ def enemy_basic_attack(enemy, player):
         if damage >= 30:
             blow_string = "~*cataclysmic*~ strike of pure ruin on you."
         elif damage >= 20:
-            blow_string = "~-earth-shattering*~ blow on you."
+            blow_string = "~-earth-shattering-~ blow on you."
         elif damage >= 15:
             blow_string = "-devastating- blow, staggering you."
         elif damage >= 10:
@@ -314,7 +314,7 @@ def can_use_ability(player, ability_name):
     for effect in chosen_ability["effects"]:
         if effect["type"].startswith("spell_"):
             spell_slot = str(effect["spell_slot_level"])
-            if spell_slot != "0" and (player.spell_slots[spell_slot] == 0 or spell_slot not in player.spell_slots):
+            if spell_slot != "0" and (spell_slot not in player.spell_slots or player.spell_slots[spell_slot] == 0):
                 can_use = False
                 log_event(f"Not enough spell slots for {ability_name}")
     return can_use
