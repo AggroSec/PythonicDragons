@@ -29,7 +29,7 @@ class TestCharacters(unittest.TestCase):
         print(f"attack roll: {attack_roll}")
 
     def test_player_character(self):
-        player = Player(2, 12, 12, 10, 14, 10, 10, 18, 10, "AggroSec", "2d6")
+        player = Player(2, 12, 12, 10, 14, 10, 10, 18, 10, "AggroSec", "2d6", {}, "Axe", "Chop")
         print(f"===The Harrowing Trial of {player.name}===")
         print(f"{player.name} started this journey at a healthy {player.current_hp} hp")
         self.assertEqual(player.current_hp, 21)
@@ -53,7 +53,7 @@ class TestCharacters(unittest.TestCase):
         print(f"What he saw struck him with fear and rage, as a... TO BE CONTINUED")
 
     def test_bob_the_minion(self):
-        enemy = EnemyNPC(1, 8, 6, 8, 8, 18, 10, 20, 8, "Bob the minion", "1d2", 50)
+        enemy = EnemyNPC(1, 8, 6, 8, 8, 18, 10, 20, 8, "Bob the minion", "1d2", 50, "dagger", "stab")
         print(f"####{enemy.name}'s sad life####")
         print(f"{enemy.name} was a simple goblin, he never was good at much anything goblins do: he wasn't the strongest at swinging a dagger, he always trip of seemingly nothing, and he didn't have the best health({enemy.max_hp})")
         self.assertEqual(enemy.max_hp, 8)
@@ -74,7 +74,7 @@ class TestCharacters(unittest.TestCase):
         self.assertTrue(ability_attack_string)
 
     def test_player_basic_attack_ability(self):
-        player = Player(2, 12, 12, 10, 14, 10, 10, 18, 10, "AggroSec", "2d6")
+        player = Player(2, 12, 12, 10, 14, 10, 10, 18, 10, "AggroSec", "2d6", {}, "Axe", "Chop")
         print(player.abilities)
         self.assertTrue("Basic Attack" == player.abilities[0]["name"])
 
